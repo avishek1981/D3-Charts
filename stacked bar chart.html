@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<style>
+  .axis .domain {
+    display: none;
+  }
+</style>
+<svg width="960" height="500"></svg>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script>
+  var svg = d3.select("svg"),
+    margin = {
+      top: 20,
+      right: 20,
+      bottom: 30,
+      left: 40
+    },
+    width = +svg.attr("width") - margin.left - margin.right,
+    height = +svg.attr("height") - margin.top - margin.bottom,
+    g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+  var x = d3.scaleBand()
+    .rangeRound([0, width])
+    .paddingInner(0.05)
+    .align(0.1);
+
+  var y = d3.scaleLinear()
+    .rangeRound([height, 0]);
+
+  var z = d3.scaleOrdinal()
+    .range(["#3BB143", "#8a89a6", "#7b6888", "#6b486b", "#a05d56", "#d0743c", "#ff8c00"]);
+
+  var data = [{"90%-99% [Confirmed]":484,"1%-69% [Low Chance]":829234,"80%-89% [High Chance]":0,"70%-79% [Medium Chance]":0,"100% [Approved]":13295531,"0% [Lost]":40000,"mgr_name":"Abhinav Gupta"},{"90%-99% [Confirmed]":1521160,"1%-69% [Low Chance]":214000,"80%-89% [High Chance]":62044,"70%-79% [Medium Chance]":92000,"100% [Approved]":16046095,"0% [Lost]":141000,"mgr_name":"Sujata Tayade"},{"90%-99% [Confirmed]":696968,"1%-69% [Low Chance]":8015444,"80%-89% [High Chance]":1260000,"70%-79% [Medium Chance]":10690,"100% [Approved]":5161495,"0% [Lost]":1772764,"mgr_name":"Abhijit Roy"},{"90%-99% [Confirmed]":1118171,"1%-69% [Low Chance]":2472043,"80%-89% [High Chance]":0,"70%-79% [Medium Chance]":174434,"100% [Approved]":12083327,"0% [Lost]":1668603,"mgr_name":"Amit Singh"},{"90%-99% [Confirmed]":200000,"1%-69% [Low Chance]":1167501,"80%-89% [High Chance]":0,"70%-79% [Medium Chance]":70000,"100% [Approved]":1953643,"0% [Lost]":95835,"mgr_name":"Saravana Kumar"},{"90%-99% [Confirmed]":68144,"1%-69% [Low Chance]":4890236,"80%-89% [High Chance]":732947,"70%-79% [Medium Chance]":0,"100% [Approved]":7884056,"0% [Lost]":6266700,"mgr_name":"Ranga Kuchlyan"},{"90%-99% [Confirmed]":930175,"1%-69% [Low Chance]":3840061,"80%-89% [High Chance]":24840,"70%-79% [Medium Chance]":0,"100% [Approved]":6800682,"0% [Lost]":329856,"mgr_name":"Sourav Roy"},{"90%-99% [Confirmed]":0,"1%-69% [Low Chance]":888500,"80%-89% [High Chance]":0,"70%-79% [Medium Chance]":0,"100% [Approved]":8109337,"0% [Lost]":1890547,"mgr_name":"Preeti Mohapatra"}];
+
+  // fix pre-processing
+  var keys = [];
+  for (key in data[0]){
+    if (key != "mgr_name")
+      keys.push(key);
+  }
+  data.forEach(function(d){
+    d.total = 0;
+    keys.forEach(function(k){
+      d.total += d[k];
+    })
+  });
+
+  data.sort(function(a, b) {
+    return b.total - a.total;
+  });
+  x.domain(data.map(function(d) {
+    return d.mgr_name;
+  }));
+  y.domain([0, d3.max(data, function(d) {
+    return d.total;
+  })]).nice();
+  z.domain(keys);
+
+  g.append("g")
+    .selectAll("g")
+    .data(d3.stack().keys(keys)(data))
+    .enter().append("g")
+    .attr("fill", function(d) {
+      var keyvalue=d.key;return z(d.key);
+    })
+    .selectAll("rect")
+    .data(function(d) {
+      return d;
+    })
+    .enter().append("rect")
+    .attr("x", function(d) {
+      return x(d.data.mgr_name);
+    })
+    .attr("y", function(d) {
+      return y(d[1]);
+    })
+    .attr("height", function(d) {
+      return y(d[0]) - y(d[1]);
+    })
+    .attr("width", x.bandwidth())
+	.on('click', function(d){d3.select("rect");console.log(this);});
+
+  g.append("g")
+    .attr("class", "axis")
+    .attr("transform", "translate(0," + height + ")")
+    .call(d3.axisBottom(x));
+
+  g.append("g")
+    .attr("class", "axis")
+    .call(d3.axisLeft(y).ticks(null, "s"))
+    .append("text")
+    .attr("x", 2)
+    .attr("y", y(y.ticks().pop()) + 0.5)
+    .attr("dy", "0.32em")
+    .attr("fill", "#000")
+    .attr("font-weight", "bold")
+    .attr("text-anchor", "start")
+    .text("Revenue");
+
+  var legend = g.append("g")
+    .attr("font-family", "sans-serif")
+    .attr("font-size", 10)
+    .attr("text-anchor", "end")
+    .selectAll("g")
+    .data(keys.slice().reverse())
+    .enter().append("g")
+    .attr("transform", function(d, i) {
+      return "translate(0," + i * 20 + ")";
+    });
+
+  legend.append("rect")
+    .attr("x", width - 19)
+    .attr("width", 19)
+    .attr("height", 19)
+    .attr("fill", z);
+
+  legend.append("text")
+    .attr("x", width - 24)
+    .attr("y", 9.5)
+    .attr("dy", "0.32em")
+    .text(function(d) {
+      return d;
+    });
+</script>

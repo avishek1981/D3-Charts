@@ -1,0 +1,850 @@
+<!DOCtype html>
+<meta charset="utf-8">
+<style> 
+
+</style>
+<body>
+<script src="https://d3js.org/d3.v4.min.js" ></script>
+  <div class = "container-name" style="display:inline-block">
+      <div class = "barplotfull" style="display:inline-block"></div>
+	   <div class = "barplotpartial" style="display:inline-block"></div>
+	  <div class = "asterplotmanager" style="display:inline-block"> </div>
+	  <div class = "asterplotlocation" style="display:inline-block"> </div>
+  </div>  
+<!-- load the d3.js library -->    	
+
+<script>
+d3.functor = function functor(v) {
+  return typeof v === "function" ? v : function() {
+    return v;
+  };
+};
+
+d3.tip = function() {
+
+  var direction = d3_tip_direction,
+      offset    = d3_tip_offset,
+      html      = d3_tip_html,
+      node      = initNode(),
+      svg       = null,
+      point     = null,
+      target    = null
+
+  function tip(vis) {
+    svg = getSVGNode(vis)
+    point = svg.createSVGPoint()
+    document.body.appendChild(node)
+  }
+
+  // Public - show the tooltip on the screen
+  //
+  // Returns a tip
+  tip.show = function() {
+    var args = Array.prototype.slice.call(arguments)
+    if(args[args.length - 1] instanceof SVGElement) target = args.pop()
+
+    var content = html.apply(this, args),
+        poffset = offset.apply(this, args),
+        dir     = direction.apply(this, args),
+        nodel   = getNodeEl(),
+        i       = directions.length,
+        coords,
+        scrollTop  = document.documentElement.scrollTop || document.body.scrollTop,
+        scrollLeft = document.documentElement.scrollLeft || document.body.scrollLeft
+
+    nodel.html(content)
+      .style('position', 'absolute')
+      .style('opacity', 1)
+      .style('pointer-events', 'all')
+
+    while(i--) nodel.classed(directions[i], false)
+    coords = direction_callbacks[dir].apply(this)
+    nodel.classed(dir, true)
+      .style('top', (coords.top +  poffset[0]) + scrollTop + 'px')
+      .style('left', (coords.left + poffset[1]) + scrollLeft + 'px')
+
+    return tip
+  }
+
+  // Public - hide the tooltip
+  //
+  // Returns a tip
+  tip.hide = function() {
+    var nodel = getNodeEl()
+    nodel
+      .style('opacity', 0)
+      .style('pointer-events', 'none')
+    return tip
+  }
+
+  // Public: Proxy attr calls to the d3 tip container.  Sets or gets attribute value.
+  //
+  // n - name of the attribute
+  // v - value of the attribute
+  //
+  // Returns tip or attribute value
+  tip.attr = function(n, v) {
+    if (arguments.length < 2 && typeof n === 'string') {
+      return getNodeEl().attr(n)
+    } else {
+      var args =  Array.prototype.slice.call(arguments)
+      d3.selection.prototype.attr.apply(getNodeEl(), args)
+    }
+
+    return tip
+  }
+
+  // Public: Proxy style calls to the d3 tip container.  Sets or gets a style value.
+  //
+  // n - name of the property
+  // v - value of the property
+  //
+  // Returns tip or style property value
+  tip.style = function(n, v) {
+    // debugger;
+    if (arguments.length < 2 && typeof n === 'string') {
+      return getNodeEl().style(n)
+    } else {
+      var args = Array.prototype.slice.call(arguments);
+      if (args.length === 1) {
+        var styles = args[0];
+        Object.keys(styles).forEach(function(key) {
+          return d3.selection.prototype.style.apply(getNodeEl(), [key, styles[key]]);
+        });
+      }
+    }
+
+    return tip
+  }
+
+  // Public: Set or get the direction of the tooltip
+  //
+  // v - One of n(north), s(south), e(east), or w(west), nw(northwest),
+  //     sw(southwest), ne(northeast) or se(southeast)
+  //
+  // Returns tip or direction
+  tip.direction = function(v) {
+    if (!arguments.length) return direction
+    direction = v == null ? v : d3.functor(v)
+
+    return tip
+  }
+
+  // Public: Sets or gets the offset of the tip
+  //
+  // v - Array of [x, y] offset
+  //
+  // Returns offset or
+  tip.offset = function(v) {
+    if (!arguments.length) return offset
+    offset = v == null ? v : d3.functor(v)
+
+    return tip
+  }
+
+  // Public: sets or gets the html value of the tooltip
+  //
+  // v - String value of the tip
+  //
+  // Returns html value or tip
+  tip.html = function(v) {
+    if (!arguments.length) return html
+    html = v == null ? v : d3.functor(v)
+
+    return tip
+  }
+
+  // Public: destroys the tooltip and removes it from the DOM
+  //
+  // Returns a tip
+  tip.destroy = function() {
+    if(node) {
+      getNodeEl().remove();
+      node = null;
+    }
+    return tip;
+  }
+
+  function d3_tip_direction() { return 'n' }
+  function d3_tip_offset() { return [0, 0] }
+  function d3_tip_html() { return ' ' }
+
+  var direction_callbacks = {
+    n:  direction_n,
+    s:  direction_s,
+    e:  direction_e,
+    w:  direction_w,
+    nw: direction_nw,
+    ne: direction_ne,
+    sw: direction_sw,
+    se: direction_se
+  };
+
+  var directions = Object.keys(direction_callbacks);
+
+  function direction_n() {
+    var bbox = getScreenBBox()
+    return {
+      top:  bbox.n.y - node.offsetHeight,
+      left: bbox.n.x - node.offsetWidth / 2
+    }
+  }
+
+  function direction_s() {
+    var bbox = getScreenBBox()
+    return {
+      top:  bbox.s.y,
+      left: bbox.s.x - node.offsetWidth / 2
+    }
+  }
+
+  function direction_e() {
+    var bbox = getScreenBBox()
+    return {
+      top:  bbox.e.y - node.offsetHeight / 2,
+      left: bbox.e.x
+    }
+  }
+
+  function direction_w() {
+    var bbox = getScreenBBox()
+    return {
+      top:  bbox.w.y - node.offsetHeight / 2,
+      left: bbox.w.x - node.offsetWidth
+    }
+  }
+
+  function direction_nw() {
+    var bbox = getScreenBBox()
+    return {
+      top:  bbox.nw.y - node.offsetHeight,
+      left: bbox.nw.x - node.offsetWidth
+    }
+  }
+
+  function direction_ne() {
+    var bbox = getScreenBBox()
+    return {
+      top:  bbox.ne.y - node.offsetHeight,
+      left: bbox.ne.x
+    }
+  }
+
+  function direction_sw() {
+    var bbox = getScreenBBox()
+    return {
+      top:  bbox.sw.y,
+      left: bbox.sw.x - node.offsetWidth
+    }
+  }
+
+  function direction_se() {
+    var bbox = getScreenBBox()
+    return {
+      top:  bbox.se.y,
+      left: bbox.e.x
+    }
+  }
+
+  function initNode() {
+    var node = d3.select(document.createElement('div'))
+    node
+      .style('position', 'absolute')
+      .style('top', '0')
+      .style('opacity', '0')
+      .style('pointer-events', 'none')
+      .style('box-sizing', 'border-box')
+
+    return node.node()
+  }
+
+  function getSVGNode(el) {
+    el = el.node()
+    if(el.tagName.toLowerCase() === 'svg')
+      return el
+
+    return el.ownerSVGElement
+  }
+
+  function getNodeEl() {
+    if(node === null) {
+      node = initNode();
+      // re-add node to DOM
+      document.body.appendChild(node);
+    };
+    return d3.select(node);
+  }
+
+  // Private - gets the screen coordinates of a shape
+  //
+  // Given a shape on the screen, will return an SVGPoint for the directions
+  // n(north), s(south), e(east), w(west), ne(northeast), se(southeast), nw(northwest),
+  // sw(southwest).
+  //
+  //    +-+-+
+  //    |   |
+  //    +   +
+  //    |   |
+  //    +-+-+
+  //
+  // Returns an Object {n, s, e, w, nw, sw, ne, se}
+  function getScreenBBox() {
+    var targetel   = target || d3.event.target;
+
+    while ('undefined' === typeof targetel.getScreenCTM && 'undefined' === targetel.parentNode) {
+        targetel = targetel.parentNode;
+    }
+
+    var bbox       = {},
+        matrix     = targetel.getScreenCTM(),
+        tbbox      = targetel.getBBox(),
+        width      = tbbox.width,
+        height     = tbbox.height,
+        x          = tbbox.x,
+        y          = tbbox.y
+
+    point.x = x
+    point.y = y
+    bbox.nw = point.matrixTransform(matrix)
+    point.x += width
+    bbox.ne = point.matrixTransform(matrix)
+    point.y += height
+    bbox.se = point.matrixTransform(matrix)
+    point.x -= width
+    bbox.sw = point.matrixTransform(matrix)
+    point.y -= height / 2
+    bbox.w  = point.matrixTransform(matrix)
+    point.x += width
+    bbox.e = point.matrixTransform(matrix)
+    point.x -= width / 2
+    point.y -= height / 2
+    bbox.n = point.matrixTransform(matrix)
+    point.y += height
+    bbox.s = point.matrixTransform(matrix)
+
+    return bbox
+  }
+
+  return tip
+};
+</script>
+
+
+
+<script>
+
+var data = [{"id":"Total","mnth_year":"Dec-2019","type":"Full","count":"892","weight":"1"},{"id":"Total","mnth_year":"Dec-2019","type":"Partial","count":"12","weight":"1"},{"id":"Sandip Datta","mnth_year":"Dec-2019","type":"Full","count":"1","weight":"1"},{"id":"Sandip Datta","mnth_year":"Dec-2019","type":"Partial","count":"2","weight":"1"},{"id":"UNKONWN","mnth_year":"Dec-2019","type":"Full","count":"880","weight":"1"},{"id":"UNKONWN","mnth_year":"Dec-2019","type":"Partial","count":"3","weight":"1"},{"id":"Soumya Ghosh","mnth_year":"Dec-2019","type":"Full","count":"0","weight":"1"},{"id":"Soumya Ghosh","mnth_year":"Dec-2019","type":"Partial","count":"2","weight":"1"},{"id":"Arnab Bhattacharjee","mnth_year":"Dec-2019","type":"Full","count":"11","weight":"1"},{"id":"Arnab Bhattacharjee","mnth_year":"Dec-2019","type":"Partial","count":"5","weight":"1"},{"id":"Total","mnth_year":"Jan-2020","type":"Full","count":"896","weight":"1"},{"id":"Total","mnth_year":"Jan-2020","type":"Partial","count":"8","weight":"1"},{"id":"Sandip Datta","mnth_year":"Jan-2020","type":"Full","count":"2","weight":"1"},{"id":"Sandip Datta","mnth_year":"Jan-2020","type":"Partial","count":"1","weight":"1"},{"id":"UNKONWN","mnth_year":"Jan-2020","type":"Full","count":"881","weight":"1"},{"id":"UNKONWN","mnth_year":"Jan-2020","type":"Partial","count":"2","weight":"1"},{"id":"Soumya Ghosh","mnth_year":"Jan-2020","type":"Full","count":"1","weight":"1"},{"id":"Soumya Ghosh","mnth_year":"Jan-2020","type":"Partial","count":"1","weight":"1"},{"id":"Arnab Bhattacharjee","mnth_year":"Jan-2020","type":"Full","count":"12","weight":"1"},{"id":"Arnab Bhattacharjee","mnth_year":"Jan-2020","type":"Partial","count":"4","weight":"1"},{"id":"Total","mnth_year":"Feb-2020","type":"Full","count":"898","weight":"1"},{"id":"Total","mnth_year":"Feb-2020","type":"Partial","count":"6","weight":"1"},{"id":"Sandip Datta","mnth_year":"Feb-2020","type":"Full","count":"2","weight":"1"},{"id":"Sandip Datta","mnth_year":"Feb-2020","type":"Partial","count":"1","weight":"1"},{"id":"UNKONWN","mnth_year":"Feb-2020","type":"Full","count":"881","weight":"1"},{"id":"UNKONWN","mnth_year":"Feb-2020","type":"Partial","count":"2","weight":"1"},{"id":"Soumya Ghosh","mnth_year":"Feb-2020","type":"Full","count":"1","weight":"1"},{"id":"Soumya Ghosh","mnth_year":"Feb-2020","type":"Partial","count":"1","weight":"1"},{"id":"Arnab Bhattacharjee","mnth_year":"Feb-2020","type":"Full","count":"14","weight":"1"},{"id":"Arnab Bhattacharjee","mnth_year":"Feb-2020","type":"Partial","count":"2","weight":"1"},{"id":"Total","mnth_year":"Mar-2020","type":"Full","count":"898","weight":"1"},{"id":"Total","mnth_year":"Mar-2020","type":"Partial","count":"6","weight":"1"},{"id":"Sandip Datta","mnth_year":"Mar-2020","type":"Full","count":"2","weight":"1"},{"id":"Sandip Datta","mnth_year":"Mar-2020","type":"Partial","count":"1","weight":"1"},{"id":"UNKONWN","mnth_year":"Mar-2020","type":"Full","count":"881","weight":"1"},{"id":"UNKONWN","mnth_year":"Mar-2020","type":"Partial","count":"2","weight":"1"},{"id":"Soumya Ghosh","mnth_year":"Mar-2020","type":"Full","count":"1","weight":"1"},{"id":"Soumya Ghosh","mnth_year":"Mar-2020","type":"Partial","count":"1","weight":"1"},{"id":"Arnab Bhattacharjee","mnth_year":"Mar-2020","type":"Full","count":"14","weight":"1"},{"id":"Arnab Bhattacharjee","mnth_year":"Mar-2020","type":"Partial","count":"2","weight":"1"},{"id":"Total","mnth_year":"Apr-2020","type":"Full","count":"898","weight":"1"},{"id":"Total","mnth_year":"Apr-2020","type":"Partial","count":"6","weight":"1"},{"id":"Sandip Datta","mnth_year":"Apr-2020","type":"Full","count":"2","weight":"1"},{"id":"Sandip Datta","mnth_year":"Apr-2020","type":"Partial","count":"1","weight":"1"},{"id":"UNKONWN","mnth_year":"Apr-2020","type":"Full","count":"881","weight":"1"},{"id":"UNKONWN","mnth_year":"Apr-2020","type":"Partial","count":"2","weight":"1"},{"id":"Soumya Ghosh","mnth_year":"Apr-2020","type":"Full","count":"1","weight":"1"},{"id":"Soumya Ghosh","mnth_year":"Apr-2020","type":"Partial","count":"1","weight":"1"},{"id":"Arnab Bhattacharjee","mnth_year":"Apr-2020","type":"Full","count":"14","weight":"1"},{"id":"Arnab Bhattacharjee","mnth_year":"Apr-2020","type":"Partial","count":"2","weight":"1"},{"id":"Total","mnth_year":"May-2020","type":"Full","count":"898","weight":"1"},{"id":"Total","mnth_year":"May-2020","type":"Partial","count":"6","weight":"1"},{"id":"Sandip Datta","mnth_year":"May-2020","type":"Full","count":"2","weight":"1"},{"id":"Sandip Datta","mnth_year":"May-2020","type":"Partial","count":"1","weight":"1"},{"id":"UNKONWN","mnth_year":"May-2020","type":"Full","count":"881","weight":"1"},{"id":"UNKONWN","mnth_year":"May-2020","type":"Partial","count":"2","weight":"1"},{"id":"Soumya Ghosh","mnth_year":"May-2020","type":"Full","count":"1","weight":"1"},{"id":"Soumya Ghosh","mnth_year":"May-2020","type":"Partial","count":"1","weight":"1"},{"id":"Arnab Bhattacharjee","mnth_year":"May-2020","type":"Full","count":"14","weight":"1"},{"id":"Arnab Bhattacharjee","mnth_year":"May-2020","type":"Partial","count":"2","weight":"1"},{"id":"Total","mnth_year":"Jun-2020","type":"Full","count":"898","weight":"1"},{"id":"Total","mnth_year":"Jun-2020","type":"Partial","count":"6","weight":"1"},{"id":"Sandip Datta","mnth_year":"Jun-2020","type":"Full","count":"2","weight":"1"},{"id":"Sandip Datta","mnth_year":"Jun-2020","type":"Partial","count":"1","weight":"1"},{"id":"UNKONWN","mnth_year":"Jun-2020","type":"Full","count":"881","weight":"1"},{"id":"UNKONWN","mnth_year":"Jun-2020","type":"Partial","count":"2","weight":"1"},{"id":"Soumya Ghosh","mnth_year":"Jun-2020","type":"Full","count":"1","weight":"1"},{"id":"Soumya Ghosh","mnth_year":"Jun-2020","type":"Partial","count":"1","weight":"1"},{"id":"Arnab Bhattacharjee","mnth_year":"Jun-2020","type":"Full","count":"14","weight":"1"},{"id":"Arnab Bhattacharjee","mnth_year":"Jun-2020","type":"Partial","count":"2","weight":"1"}];
+
+var data_filtered = data.filter(function(d){return d.id ==="Total" && d.type ==="Full"});
+var data_filtered_p = data.filter(function(d){return d.id ==="Total" && d.type ==="Partial"});
+
+// set the dimensions and margins of the graph
+var margin = {top: 20, right: 20, bottom: 50, left: 40},
+    width = 300 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+
+// set the ranges
+var x = d3.scaleBand()
+          .range([0, width])
+          .padding(0.1);
+var y = d3.scaleLinear()
+          .range([height, 0]);
+		  
+var colorscale = d3.scaleLinear()
+            .range(['#FA8072','#DC143C'])
+            .domain([0, d3.max(data_filtered, function (d) {
+                return d.count;
+            })]);
+
+var colorscalepartial = d3.scaleLinear()
+            .range(['#FFD862','#FFC414'])
+            .domain([0, d3.max(data_filtered_p, function (d) {
+                return d.count;
+            })]);	
+      
+// append the svg object to the body of the page
+// append a 'group' element to 'svg'
+// moves the 'group' element to the top left margin
+var svg = d3.select(".barplotfull").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+	//.attr("height", height )
+  .append("g")
+    .attr("transform", 
+          "translate(" + margin.left + "," + margin.top + ")");
+
+  // format the data
+  data_filtered.forEach(function(d) {
+    d.count = +d.count;
+  });
+
+  // Scale the range of the data in the domains
+  x.domain(data.map(function(d) { return d.mnth_year ; }));
+  y.domain([0, d3.max(data_filtered, function(d) { return d.count; })]);
+  
+  var t = d3.transition().duration(200);
+  
+  // append the rectangles for the bar chart
+  svg.selectAll(".bar")
+      .data(data_filtered)
+    .enter().append("rect")
+      .attr("class", "bar")
+      .attr("x", function(d) { return x(d.mnth_year); })
+      .attr("width", x.bandwidth())
+      .attr("y", function(d) { return y(d.count); })
+      .attr("height", function(d) { return height - y(d.count); })
+	  .style("fill", function(d) { return colorscale(d.count);})
+	  .on('click',function(d){ currentopacity = d3.select(this).style('opacity'); 
+			                         //console.log(d.value);
+			                         //d3.selectAll('.bar').transition(t).style("fill",function(d){return colorscale(d.count);}); 
+			                         d3.selectAll('.bar').transition(t).style("opacity", 1); 
+									 d3.selectAll('.barpartial').transition(t).style("opacity", 1); 
+									 //d3.selectAll('.barpartial').transition(t).style("fill",function(d){return colorscalepartial(d.count);}); 
+			                         //d3.selectAll('.barpartial').transition(t).style("opacity", 1); 
+									 //d3.select(this).transition(t).style("fill","orange");
+									 d3.select(this).transition(t).style("opacity", 0.5);
+									 selected_id = d.mnth_year; 
+									 selected_type = d.type;
+									 //console.log(selected_type);
+									 drawasterplotmanager(data,selected_id,selected_type);
+									 drawasterplotlocation(selected_id,selected_type);});
+									 
+  // add the x Axis
+  svg.append("g")
+      .attr("transform", "translate(0," + (height) + ")")
+      .call(d3.axisBottom(x))
+	  .selectAll("text")
+  .attr("dx", ".35em")
+  .attr("dy", "-.105em")
+  .attr("transform", "rotate(-45)")
+  .style("text-anchor", "end");
+  //.style("text-decoration", "white");
+
+  // add the y Axis
+  svg.append("g")
+      .call(d3.axisLeft(y))
+	  ;
+
+          //add a value label to the top of each bar
+        svg.selectAll(".text")  		
+	  .data(data_filtered)
+	  .enter()
+	  .append("text")
+            .attr("class", "label")
+            //y position of the label is halfway down the bar
+            .attr("x", function (d) {
+                return x(d.mnth_year) + x.bandwidth() / 2 -4;
+            })
+            //x position is 3 pixels to the right of the bar
+            .attr("y", function (d) {
+                return y(d.count) ;
+            })
+            .text(function (d) {
+                return d.count;
+            })
+			.style("font-size",10);
+
+/*Plot the partial resource bars */
+
+var svgpartial = d3.select(".barplotpartial").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+	//.attr("height", height )
+  .append("g")
+    .attr("transform", 
+          "translate(" + margin.left + "," + margin.top + ")");
+
+  // format the data
+  data_filtered_p.forEach(function(d) {
+    d.count = +d.count;
+  });
+
+  // Scale the range of the data in the domains
+  x.domain(data.map(function(d) { return d.mnth_year ; }));
+  y.domain([0, d3.max(data_filtered_p, function(d) { return d.count; })]);
+  
+  var t = d3.transition().duration(200);
+  
+    // append the rectangles for the partial bar chart
+  svgpartial.selectAll(".barpartial")
+      .data(data_filtered_p)
+    .enter().append("rect")
+      .attr("class", "barpartial")
+      .attr("x", function(d) { return x(d.mnth_year ); })
+      .attr("width", x.bandwidth())
+      .attr("y", function(d) { return y(d.count); })
+      .attr("height", function(d) { return height - y(d.count)  ; })
+	  .style("fill", function(d) { return colorscalepartial(d.count);})
+	  .on('click',function(d){ currentopacity = d3.select(this).style('opacity'); 
+			                         //console.log(d.value);
+			                         d3.selectAll('.bar').transition(t).style("opacity", 1); 
+			                         d3.selectAll('.barpartial').transition(t).style("opacity", 1); 
+									 //d3.selectAll('.bar').transition(t).style("fill",function(d){return colorscale(d.count);}); 
+			                         //d3.selectAll('.bar').transition(t).style("opacity", 1);
+									 //d3.select(this).transition(t).style("fill","orange");
+									 d3.select(this).transition(t).style("opacity", 0.5);
+									 selected_id = d.mnth_year; 
+									 selected_type = d.type;
+									 drawasterplotmanager(data,selected_id,selected_type);
+									 drawasterplotlocation(selected_id,selected_type);});  
+
+  // add the x Axis
+  svgpartial.append("g")
+      .attr("transform", "translate(0," + height + ")")
+      .call(d3.axisBottom(x))
+	  .selectAll("text")
+  .attr("dx", ".35em")
+  .attr("dy", "-.105em")
+  .attr("transform", "rotate(-45)")
+  .style("text-anchor", "end")
+  .style("text-decoration", "white");
+
+  // add the y Axis
+  svgpartial.append("g")
+      .call(d3.axisLeft(y))
+	  ;
+  
+  svgpartial.selectAll(".text")  		
+	  .data(data_filtered_p)
+	  .enter()
+	  .append("text")
+            .attr("class", "label")
+            //y position of the label is halfway down the bar
+            .attr("x", function (d) {
+                return x(d.mnth_year) + x.bandwidth() / 2 -4;
+            })
+            //x position is 3 pixels to the right of the bar
+            .attr("y", function (d) {
+                return y(d.count) ;
+            })
+            .text(function (d) {
+                return d.count;
+            })
+			.style("font-size",10);		
+			
+function drawasterplotmanager(data,id,type) {
+
+//console.log(data);
+//console.log(id);
+//console.log(type);
+d3.selectAll(".asterpltmanager").remove();
+var data_new = data.filter(function(d){return d.mnth_year === id && d.type===type && d.id != "Total"});
+//console.log(data_new);
+
+var width = 350,
+    height = 500,
+	topmargin = 50,
+    radius = Math.min(width-100, height) / 2,
+    innerRadius = 0.3 * radius;
+
+var pie = d3.pie()
+    .sort(null)
+    .value(function(d) { return d.width; });
+
+var tip = d3.tip()
+  .attr('class', 'd3-tip')
+  .offset([0, 0])
+  .html(function(d) {
+    return d.data.id + ": <span style='color:orangered'>" + d.data.count + "</span>";
+  });
+  
+var resourcecount = [];
+var idrray = [];
+  
+  data_new.forEach(function(d) {
+    d.id     =  d.id;
+    d.count  = +d.count;
+    d.weight = +d.weight;
+    d.width  = +d.weight;
+	resourcecount.push(d.count);
+	idrray.push(d.id);
+  });
+  
+var max_resource_count = d3.max(resourcecount);
+idrray=d3.set(idrray).values();
+
+   // calculate the total score
+  var score = 
+    data_new.reduce(function(a, b) {
+      //console.log('a:' + a + ', b.score: ' + b.score + ', b.weight: ' + b.weight);
+      return a + (b.resources * b.weight); 
+    }, 0) ;
+
+//var arc = d3.svg.arc()
+var arc = d3.arc()
+  .innerRadius(innerRadius)
+  .outerRadius(function (d) { 
+    return (radius - innerRadius) * (d.data.count / max_resource_count) + innerRadius; 
+  });
+
+//var outlineArc = d3.svg.arc()
+var outlineArc = d3.arc()
+        .innerRadius(innerRadius)
+        .outerRadius(radius);
+
+var svg2 = d3.select(".asterplotmanager").append("svg")
+    .attr("width", width)
+    .attr("height", height+topmargin)
+	.attr("class","asterpltmanager")
+    .append("g")
+    .attr("transform", "translate(" + (width-100) / 2 + "," + ((height+topmargin)/ 2) + ")");
+
+svg2.call(tip);
+
+  
+  // for (var i = 0; i < data.score; i++) { console.log(data[i].id) }
+  
+  var color = d3.scaleOrdinal(d3.schemeCategory10);
+  
+  var path = svg2.selectAll(".solidArc")
+      .data(pie(data_new))
+    .enter().append("path")
+      .attr("fill", function(d) { return color(d.data.id); })
+      .attr("class", "solidArc")
+      .attr("stroke", "gray")
+      .attr("d", arc)
+      .on('mouseover', tip.show)
+		.on('mouseout', tip.hide)
+		.on('click', function(d){selected_id = d.data.id; tabulate(data_new, ["id", "mnth_year","count", "weight"],selected_id);});
+
+  var outerPath = svg2.selectAll(".outlineArc")
+      .data(pie(data_new))
+    .enter().append("path")
+      .attr("fill", "none")
+      .attr("stroke", "gray")
+      .attr("class", "outlineArc")
+      .attr("d", outlineArc);  
+
+
+  // calculate the weighted mean score
+  var score = 
+    data_new.reduce(function(a, b) {
+      //console.log('a:' + a + ', b.score: ' + b.score + ', b.weight: ' + b.weight);
+      return a + (b.count * b.weight); 
+    }, 0) ;
+
+  svg2.append("svg:text")
+    .attr("class", "aster-score")
+    .attr("dy", ".35em")
+    .attr("text-anchor", "middle") // text-align: right
+    .text(Math.round(score));
+	
+  var size = 10  
+  svg2.selectAll("mydots")
+  .data(idrray)
+  .enter()
+  .append("rect")
+    .attr('class','rectind')
+    .attr("x", width-220)
+    .attr("y", function(d,i){ return -200 + i*(size+5)}) // 100 is where the first dot appears. 25 is the distance between dots
+    .attr("width", size)
+    .attr("height", size)
+    .style("fill", function(d){ return color(d)})
+	.style("opacity",0.5)	
+	.on('click', function(d){tabulate(data_new, ["id", "mnth_year","count", "weight"],d);})
+	
+  // Add one dot in the legend for each name.
+  svg2.selectAll("mylabels")
+  .data(idrray)
+  .enter()
+  .append("text")
+    .attr("x", width-220 + size*1.1)
+    .attr("y", function(d,i){ return -200 + i*(size+5) + (size/2)}) // 100 is where the first dot appears. 25 is the distance between dots
+    .style("fill", function(d){ return color(d)})
+    .text(function(d){ return d})
+    .attr("text-anchor", "left")
+    .style("alignment-baseline", "middle")
+	.style("font-size",10)
+	.on('click', function(d){tabulate(data_new, ["id", "mnth_year","count", "weight"],d);})
+	
+}	
+
+
+
+function drawasterplotlocation(id,type) {
+
+var data = [{"id":"Total","mnth_year":"Dec-2019","type":"Full","count":"892","weight":"1"},{"id":"Total","mnth_year":"Dec-2019","type":"Partial","count":"12","weight":"1"},{"id":"kolkata","mnth_year":"Dec-2019","type":"Full","count":"1","weight":"1"},{"id":"kolkata","mnth_year":"Dec-2019","type":"Partial","count":"0","weight":"1"},{"id":"Gurgaon","mnth_year":"Dec-2019","type":"Full","count":"11","weight":"1"},{"id":"Gurgaon","mnth_year":"Dec-2019","type":"Partial","count":"0","weight":"1"},{"id":"Bhubaneswar","mnth_year":"Dec-2019","type":"Full","count":"1","weight":"1"},{"id":"Bhubaneswar","mnth_year":"Dec-2019","type":"Partial","count":"0","weight":"1"},{"id":"Mississauga","mnth_year":"Dec-2019","type":"Full","count":"1","weight":"1"},{"id":"Mississauga","mnth_year":"Dec-2019","type":"Partial","count":"0","weight":"1"},{"id":"Metro Manila","mnth_year":"Dec-2019","type":"Full","count":"17","weight":"1"},{"id":"Metro Manila","mnth_year":"Dec-2019","type":"Partial","count":"0","weight":"1"},{"id":"Kolkata","mnth_year":"Dec-2019","type":"Full","count":"127","weight":"1"},{"id":"Kolkata","mnth_year":"Dec-2019","type":"Partial","count":"10","weight":"1"},{"id":"TCS-Kolkata","mnth_year":"Dec-2019","type":"Full","count":"1","weight":"1"},{"id":"TCS-Kolkata","mnth_year":"Dec-2019","type":"Partial","count":"1","weight":"1"},{"id":"Mumbai","mnth_year":"Dec-2019","type":"Full","count":"54","weight":"1"},{"id":"Mumbai","mnth_year":"Dec-2019","type":"Partial","count":"0","weight":"1"},{"id":"Hyderabad","mnth_year":"Dec-2019","type":"Full","count":"8","weight":"1"},{"id":"Hyderabad","mnth_year":"Dec-2019","type":"Partial","count":"0","weight":"1"},{"id":"Bangalore","mnth_year":"Dec-2019","type":"Full","count":"8","weight":"1"},{"id":"Bangalore","mnth_year":"Dec-2019","type":"Partial","count":"0","weight":"1"},{"id":"Bhubhaneshwar","mnth_year":"Dec-2019","type":"Full","count":"5","weight":"1"},{"id":"Bhubhaneshwar","mnth_year":"Dec-2019","type":"Partial","count":"0","weight":"1"},{"id":"Thousand Oaks","mnth_year":"Dec-2019","type":"Full","count":"78","weight":"1"},{"id":"Thousand Oaks","mnth_year":"Dec-2019","type":"Partial","count":"0","weight":"1"},{"id":"Coimbatore","mnth_year":"Dec-2019","type":"Full","count":"1","weight":"1"},{"id":"Coimbatore","mnth_year":"Dec-2019","type":"Partial","count":"0","weight":"1"},{"id":"TCS Kolkata","mnth_year":"Dec-2019","type":"Full","count":"1","weight":"1"},{"id":"TCS Kolkata","mnth_year":"Dec-2019","type":"Partial","count":"0","weight":"1"},{"id":"Pune","mnth_year":"Dec-2019","type":"Full","count":"472","weight":"1"},{"id":"Pune","mnth_year":"Dec-2019","type":"Partial","count":"0","weight":"1"},{"id":"Noida","mnth_year":"Dec-2019","type":"Full","count":"103","weight":"1"},{"id":"Noida","mnth_year":"Dec-2019","type":"Partial","count":"1","weight":"1"},{"id":"Montreal","mnth_year":"Dec-2019","type":"Full","count":"1","weight":"1"},{"id":"Montreal","mnth_year":"Dec-2019","type":"Partial","count":"0","weight":"1"},{"id":"Toronto","mnth_year":"Dec-2019","type":"Full","count":"2","weight":"1"},{"id":"Toronto","mnth_year":"Dec-2019","type":"Partial","count":"0","weight":"1"},{"id":"Total","mnth_year":"Jan-2020","type":"Full","count":"896","weight":"1"},{"id":"Total","mnth_year":"Jan-2020","type":"Partial","count":"8","weight":"1"},{"id":"kolkata","mnth_year":"Jan-2020","type":"Full","count":"1","weight":"1"},{"id":"kolkata","mnth_year":"Jan-2020","type":"Partial","count":"0","weight":"1"},{"id":"Gurgaon","mnth_year":"Jan-2020","type":"Full","count":"11","weight":"1"},{"id":"Gurgaon","mnth_year":"Jan-2020","type":"Partial","count":"0","weight":"1"},{"id":"Bhubaneswar","mnth_year":"Jan-2020","type":"Full","count":"1","weight":"1"},{"id":"Bhubaneswar","mnth_year":"Jan-2020","type":"Partial","count":"0","weight":"1"},{"id":"Mississauga","mnth_year":"Jan-2020","type":"Full","count":"1","weight":"1"},{"id":"Mississauga","mnth_year":"Jan-2020","type":"Partial","count":"0","weight":"1"},{"id":"Metro Manila","mnth_year":"Jan-2020","type":"Full","count":"17","weight":"1"},{"id":"Metro Manila","mnth_year":"Jan-2020","type":"Partial","count":"0","weight":"1"},{"id":"Kolkata","mnth_year":"Jan-2020","type":"Full","count":"131","weight":"1"},{"id":"Kolkata","mnth_year":"Jan-2020","type":"Partial","count":"6","weight":"1"},{"id":"TCS-Kolkata","mnth_year":"Jan-2020","type":"Full","count":"1","weight":"1"},{"id":"TCS-Kolkata","mnth_year":"Jan-2020","type":"Partial","count":"1","weight":"1"},{"id":"Mumbai","mnth_year":"Jan-2020","type":"Full","count":"54","weight":"1"},{"id":"Mumbai","mnth_year":"Jan-2020","type":"Partial","count":"0","weight":"1"},{"id":"Hyderabad","mnth_year":"Jan-2020","type":"Full","count":"8","weight":"1"},{"id":"Hyderabad","mnth_year":"Jan-2020","type":"Partial","count":"0","weight":"1"},{"id":"Bangalore","mnth_year":"Jan-2020","type":"Full","count":"8","weight":"1"},{"id":"Bangalore","mnth_year":"Jan-2020","type":"Partial","count":"0","weight":"1"},{"id":"Bhubhaneshwar","mnth_year":"Jan-2020","type":"Full","count":"5","weight":"1"},{"id":"Bhubhaneshwar","mnth_year":"Jan-2020","type":"Partial","count":"0","weight":"1"},{"id":"Thousand Oaks","mnth_year":"Jan-2020","type":"Full","count":"78","weight":"1"},{"id":"Thousand Oaks","mnth_year":"Jan-2020","type":"Partial","count":"0","weight":"1"},{"id":"Coimbatore","mnth_year":"Jan-2020","type":"Full","count":"1","weight":"1"},{"id":"Coimbatore","mnth_year":"Jan-2020","type":"Partial","count":"0","weight":"1"},{"id":"TCS Kolkata","mnth_year":"Jan-2020","type":"Full","count":"1","weight":"1"},{"id":"TCS Kolkata","mnth_year":"Jan-2020","type":"Partial","count":"0","weight":"1"},{"id":"Pune","mnth_year":"Jan-2020","type":"Full","count":"472","weight":"1"},{"id":"Pune","mnth_year":"Jan-2020","type":"Partial","count":"0","weight":"1"},{"id":"Noida","mnth_year":"Jan-2020","type":"Full","count":"103","weight":"1"},{"id":"Noida","mnth_year":"Jan-2020","type":"Partial","count":"1","weight":"1"},{"id":"Montreal","mnth_year":"Jan-2020","type":"Full","count":"1","weight":"1"},{"id":"Montreal","mnth_year":"Jan-2020","type":"Partial","count":"0","weight":"1"},{"id":"Toronto","mnth_year":"Jan-2020","type":"Full","count":"2","weight":"1"},{"id":"Toronto","mnth_year":"Jan-2020","type":"Partial","count":"0","weight":"1"},{"id":"Total","mnth_year":"Feb-2020","type":"Full","count":"898","weight":"1"},{"id":"Total","mnth_year":"Feb-2020","type":"Partial","count":"6","weight":"1"},{"id":"kolkata","mnth_year":"Feb-2020","type":"Full","count":"1","weight":"1"},{"id":"kolkata","mnth_year":"Feb-2020","type":"Partial","count":"0","weight":"1"},{"id":"Gurgaon","mnth_year":"Feb-2020","type":"Full","count":"11","weight":"1"},{"id":"Gurgaon","mnth_year":"Feb-2020","type":"Partial","count":"0","weight":"1"},{"id":"Bhubaneswar","mnth_year":"Feb-2020","type":"Full","count":"1","weight":"1"},{"id":"Bhubaneswar","mnth_year":"Feb-2020","type":"Partial","count":"0","weight":"1"},{"id":"Mississauga","mnth_year":"Feb-2020","type":"Full","count":"1","weight":"1"},{"id":"Mississauga","mnth_year":"Feb-2020","type":"Partial","count":"0","weight":"1"},{"id":"Metro Manila","mnth_year":"Feb-2020","type":"Full","count":"17","weight":"1"},{"id":"Metro Manila","mnth_year":"Feb-2020","type":"Partial","count":"0","weight":"1"},{"id":"Kolkata","mnth_year":"Feb-2020","type":"Full","count":"133","weight":"1"},{"id":"Kolkata","mnth_year":"Feb-2020","type":"Partial","count":"4","weight":"1"},{"id":"TCS-Kolkata","mnth_year":"Feb-2020","type":"Full","count":"1","weight":"1"},{"id":"TCS-Kolkata","mnth_year":"Feb-2020","type":"Partial","count":"1","weight":"1"},{"id":"Mumbai","mnth_year":"Feb-2020","type":"Full","count":"54","weight":"1"},{"id":"Mumbai","mnth_year":"Feb-2020","type":"Partial","count":"0","weight":"1"},{"id":"Hyderabad","mnth_year":"Feb-2020","type":"Full","count":"8","weight":"1"},{"id":"Hyderabad","mnth_year":"Feb-2020","type":"Partial","count":"0","weight":"1"},{"id":"Bangalore","mnth_year":"Feb-2020","type":"Full","count":"8","weight":"1"},{"id":"Bangalore","mnth_year":"Feb-2020","type":"Partial","count":"0","weight":"1"},{"id":"Bhubhaneshwar","mnth_year":"Feb-2020","type":"Full","count":"5","weight":"1"},{"id":"Bhubhaneshwar","mnth_year":"Feb-2020","type":"Partial","count":"0","weight":"1"},{"id":"Thousand Oaks","mnth_year":"Feb-2020","type":"Full","count":"78","weight":"1"},{"id":"Thousand Oaks","mnth_year":"Feb-2020","type":"Partial","count":"0","weight":"1"},{"id":"Coimbatore","mnth_year":"Feb-2020","type":"Full","count":"1","weight":"1"},{"id":"Coimbatore","mnth_year":"Feb-2020","type":"Partial","count":"0","weight":"1"},{"id":"TCS Kolkata","mnth_year":"Feb-2020","type":"Full","count":"1","weight":"1"},{"id":"TCS Kolkata","mnth_year":"Feb-2020","type":"Partial","count":"0","weight":"1"},{"id":"Pune","mnth_year":"Feb-2020","type":"Full","count":"472","weight":"1"},{"id":"Pune","mnth_year":"Feb-2020","type":"Partial","count":"0","weight":"1"},{"id":"Noida","mnth_year":"Feb-2020","type":"Full","count":"103","weight":"1"},{"id":"Noida","mnth_year":"Feb-2020","type":"Partial","count":"1","weight":"1"},{"id":"Montreal","mnth_year":"Feb-2020","type":"Full","count":"1","weight":"1"},{"id":"Montreal","mnth_year":"Feb-2020","type":"Partial","count":"0","weight":"1"},{"id":"Toronto","mnth_year":"Feb-2020","type":"Full","count":"2","weight":"1"},{"id":"Toronto","mnth_year":"Feb-2020","type":"Partial","count":"0","weight":"1"},{"id":"Total","mnth_year":"Mar-2020","type":"Full","count":"898","weight":"1"},{"id":"Total","mnth_year":"Mar-2020","type":"Partial","count":"6","weight":"1"},{"id":"kolkata","mnth_year":"Mar-2020","type":"Full","count":"1","weight":"1"},{"id":"kolkata","mnth_year":"Mar-2020","type":"Partial","count":"0","weight":"1"},{"id":"Gurgaon","mnth_year":"Mar-2020","type":"Full","count":"11","weight":"1"},{"id":"Gurgaon","mnth_year":"Mar-2020","type":"Partial","count":"0","weight":"1"},{"id":"Bhubaneswar","mnth_year":"Mar-2020","type":"Full","count":"1","weight":"1"},{"id":"Bhubaneswar","mnth_year":"Mar-2020","type":"Partial","count":"0","weight":"1"},{"id":"Mississauga","mnth_year":"Mar-2020","type":"Full","count":"1","weight":"1"},{"id":"Mississauga","mnth_year":"Mar-2020","type":"Partial","count":"0","weight":"1"},{"id":"Metro Manila","mnth_year":"Mar-2020","type":"Full","count":"17","weight":"1"},{"id":"Metro Manila","mnth_year":"Mar-2020","type":"Partial","count":"0","weight":"1"},{"id":"Kolkata","mnth_year":"Mar-2020","type":"Full","count":"133","weight":"1"},{"id":"Kolkata","mnth_year":"Mar-2020","type":"Partial","count":"4","weight":"1"},{"id":"TCS-Kolkata","mnth_year":"Mar-2020","type":"Full","count":"1","weight":"1"},{"id":"TCS-Kolkata","mnth_year":"Mar-2020","type":"Partial","count":"1","weight":"1"},{"id":"Mumbai","mnth_year":"Mar-2020","type":"Full","count":"54","weight":"1"},{"id":"Mumbai","mnth_year":"Mar-2020","type":"Partial","count":"0","weight":"1"},{"id":"Hyderabad","mnth_year":"Mar-2020","type":"Full","count":"8","weight":"1"},{"id":"Hyderabad","mnth_year":"Mar-2020","type":"Partial","count":"0","weight":"1"},{"id":"Bangalore","mnth_year":"Mar-2020","type":"Full","count":"8","weight":"1"},{"id":"Bangalore","mnth_year":"Mar-2020","type":"Partial","count":"0","weight":"1"},{"id":"Bhubhaneshwar","mnth_year":"Mar-2020","type":"Full","count":"5","weight":"1"},{"id":"Bhubhaneshwar","mnth_year":"Mar-2020","type":"Partial","count":"0","weight":"1"},{"id":"Thousand Oaks","mnth_year":"Mar-2020","type":"Full","count":"78","weight":"1"},{"id":"Thousand Oaks","mnth_year":"Mar-2020","type":"Partial","count":"0","weight":"1"},{"id":"Coimbatore","mnth_year":"Mar-2020","type":"Full","count":"1","weight":"1"},{"id":"Coimbatore","mnth_year":"Mar-2020","type":"Partial","count":"0","weight":"1"},{"id":"TCS Kolkata","mnth_year":"Mar-2020","type":"Full","count":"1","weight":"1"},{"id":"TCS Kolkata","mnth_year":"Mar-2020","type":"Partial","count":"0","weight":"1"},{"id":"Pune","mnth_year":"Mar-2020","type":"Full","count":"472","weight":"1"},{"id":"Pune","mnth_year":"Mar-2020","type":"Partial","count":"0","weight":"1"},{"id":"Noida","mnth_year":"Mar-2020","type":"Full","count":"103","weight":"1"},{"id":"Noida","mnth_year":"Mar-2020","type":"Partial","count":"1","weight":"1"},{"id":"Montreal","mnth_year":"Mar-2020","type":"Full","count":"1","weight":"1"},{"id":"Montreal","mnth_year":"Mar-2020","type":"Partial","count":"0","weight":"1"},{"id":"Toronto","mnth_year":"Mar-2020","type":"Full","count":"2","weight":"1"},{"id":"Toronto","mnth_year":"Mar-2020","type":"Partial","count":"0","weight":"1"},{"id":"Total","mnth_year":"Apr-2020","type":"Full","count":"898","weight":"1"},{"id":"Total","mnth_year":"Apr-2020","type":"Partial","count":"6","weight":"1"},{"id":"kolkata","mnth_year":"Apr-2020","type":"Full","count":"1","weight":"1"},{"id":"kolkata","mnth_year":"Apr-2020","type":"Partial","count":"0","weight":"1"},{"id":"Gurgaon","mnth_year":"Apr-2020","type":"Full","count":"11","weight":"1"},{"id":"Gurgaon","mnth_year":"Apr-2020","type":"Partial","count":"0","weight":"1"},{"id":"Bhubaneswar","mnth_year":"Apr-2020","type":"Full","count":"1","weight":"1"},{"id":"Bhubaneswar","mnth_year":"Apr-2020","type":"Partial","count":"0","weight":"1"},{"id":"Mississauga","mnth_year":"Apr-2020","type":"Full","count":"1","weight":"1"},{"id":"Mississauga","mnth_year":"Apr-2020","type":"Partial","count":"0","weight":"1"},{"id":"Metro Manila","mnth_year":"Apr-2020","type":"Full","count":"17","weight":"1"},{"id":"Metro Manila","mnth_year":"Apr-2020","type":"Partial","count":"0","weight":"1"},{"id":"Kolkata","mnth_year":"Apr-2020","type":"Full","count":"133","weight":"1"},{"id":"Kolkata","mnth_year":"Apr-2020","type":"Partial","count":"4","weight":"1"},{"id":"TCS-Kolkata","mnth_year":"Apr-2020","type":"Full","count":"1","weight":"1"},{"id":"TCS-Kolkata","mnth_year":"Apr-2020","type":"Partial","count":"1","weight":"1"},{"id":"Mumbai","mnth_year":"Apr-2020","type":"Full","count":"54","weight":"1"},{"id":"Mumbai","mnth_year":"Apr-2020","type":"Partial","count":"0","weight":"1"},{"id":"Hyderabad","mnth_year":"Apr-2020","type":"Full","count":"8","weight":"1"},{"id":"Hyderabad","mnth_year":"Apr-2020","type":"Partial","count":"0","weight":"1"},{"id":"Bangalore","mnth_year":"Apr-2020","type":"Full","count":"8","weight":"1"},{"id":"Bangalore","mnth_year":"Apr-2020","type":"Partial","count":"0","weight":"1"},{"id":"Bhubhaneshwar","mnth_year":"Apr-2020","type":"Full","count":"5","weight":"1"},{"id":"Bhubhaneshwar","mnth_year":"Apr-2020","type":"Partial","count":"0","weight":"1"},{"id":"Thousand Oaks","mnth_year":"Apr-2020","type":"Full","count":"78","weight":"1"},{"id":"Thousand Oaks","mnth_year":"Apr-2020","type":"Partial","count":"0","weight":"1"},{"id":"Coimbatore","mnth_year":"Apr-2020","type":"Full","count":"1","weight":"1"},{"id":"Coimbatore","mnth_year":"Apr-2020","type":"Partial","count":"0","weight":"1"},{"id":"TCS Kolkata","mnth_year":"Apr-2020","type":"Full","count":"1","weight":"1"},{"id":"TCS Kolkata","mnth_year":"Apr-2020","type":"Partial","count":"0","weight":"1"},{"id":"Pune","mnth_year":"Apr-2020","type":"Full","count":"472","weight":"1"},{"id":"Pune","mnth_year":"Apr-2020","type":"Partial","count":"0","weight":"1"},{"id":"Noida","mnth_year":"Apr-2020","type":"Full","count":"103","weight":"1"},{"id":"Noida","mnth_year":"Apr-2020","type":"Partial","count":"1","weight":"1"},{"id":"Montreal","mnth_year":"Apr-2020","type":"Full","count":"1","weight":"1"},{"id":"Montreal","mnth_year":"Apr-2020","type":"Partial","count":"0","weight":"1"},{"id":"Toronto","mnth_year":"Apr-2020","type":"Full","count":"2","weight":"1"},{"id":"Toronto","mnth_year":"Apr-2020","type":"Partial","count":"0","weight":"1"},{"id":"Total","mnth_year":"May-2020","type":"Full","count":"898","weight":"1"},{"id":"Total","mnth_year":"May-2020","type":"Partial","count":"6","weight":"1"},{"id":"kolkata","mnth_year":"May-2020","type":"Full","count":"1","weight":"1"},{"id":"kolkata","mnth_year":"May-2020","type":"Partial","count":"0","weight":"1"},{"id":"Gurgaon","mnth_year":"May-2020","type":"Full","count":"11","weight":"1"},{"id":"Gurgaon","mnth_year":"May-2020","type":"Partial","count":"0","weight":"1"},{"id":"Bhubaneswar","mnth_year":"May-2020","type":"Full","count":"1","weight":"1"},{"id":"Bhubaneswar","mnth_year":"May-2020","type":"Partial","count":"0","weight":"1"},{"id":"Mississauga","mnth_year":"May-2020","type":"Full","count":"1","weight":"1"},{"id":"Mississauga","mnth_year":"May-2020","type":"Partial","count":"0","weight":"1"},{"id":"Metro Manila","mnth_year":"May-2020","type":"Full","count":"17","weight":"1"},{"id":"Metro Manila","mnth_year":"May-2020","type":"Partial","count":"0","weight":"1"},{"id":"Kolkata","mnth_year":"May-2020","type":"Full","count":"133","weight":"1"},{"id":"Kolkata","mnth_year":"May-2020","type":"Partial","count":"4","weight":"1"},{"id":"TCS-Kolkata","mnth_year":"May-2020","type":"Full","count":"1","weight":"1"},{"id":"TCS-Kolkata","mnth_year":"May-2020","type":"Partial","count":"1","weight":"1"},{"id":"Mumbai","mnth_year":"May-2020","type":"Full","count":"54","weight":"1"},{"id":"Mumbai","mnth_year":"May-2020","type":"Partial","count":"0","weight":"1"},{"id":"Hyderabad","mnth_year":"May-2020","type":"Full","count":"8","weight":"1"},{"id":"Hyderabad","mnth_year":"May-2020","type":"Partial","count":"0","weight":"1"},{"id":"Bangalore","mnth_year":"May-2020","type":"Full","count":"8","weight":"1"},{"id":"Bangalore","mnth_year":"May-2020","type":"Partial","count":"0","weight":"1"},{"id":"Bhubhaneshwar","mnth_year":"May-2020","type":"Full","count":"5","weight":"1"},{"id":"Bhubhaneshwar","mnth_year":"May-2020","type":"Partial","count":"0","weight":"1"},{"id":"Thousand Oaks","mnth_year":"May-2020","type":"Full","count":"78","weight":"1"},{"id":"Thousand Oaks","mnth_year":"May-2020","type":"Partial","count":"0","weight":"1"},{"id":"Coimbatore","mnth_year":"May-2020","type":"Full","count":"1","weight":"1"},{"id":"Coimbatore","mnth_year":"May-2020","type":"Partial","count":"0","weight":"1"},{"id":"TCS Kolkata","mnth_year":"May-2020","type":"Full","count":"1","weight":"1"},{"id":"TCS Kolkata","mnth_year":"May-2020","type":"Partial","count":"0","weight":"1"},{"id":"Pune","mnth_year":"May-2020","type":"Full","count":"472","weight":"1"},{"id":"Pune","mnth_year":"May-2020","type":"Partial","count":"0","weight":"1"},{"id":"Noida","mnth_year":"May-2020","type":"Full","count":"103","weight":"1"},{"id":"Noida","mnth_year":"May-2020","type":"Partial","count":"1","weight":"1"},{"id":"Montreal","mnth_year":"May-2020","type":"Full","count":"1","weight":"1"},{"id":"Montreal","mnth_year":"May-2020","type":"Partial","count":"0","weight":"1"},{"id":"Toronto","mnth_year":"May-2020","type":"Full","count":"2","weight":"1"},{"id":"Toronto","mnth_year":"May-2020","type":"Partial","count":"0","weight":"1"},{"id":"Total","mnth_year":"Jun-2020","type":"Full","count":"898","weight":"1"},{"id":"Total","mnth_year":"Jun-2020","type":"Partial","count":"6","weight":"1"},{"id":"kolkata","mnth_year":"Jun-2020","type":"Full","count":"1","weight":"1"},{"id":"kolkata","mnth_year":"Jun-2020","type":"Partial","count":"0","weight":"1"},{"id":"Gurgaon","mnth_year":"Jun-2020","type":"Full","count":"11","weight":"1"},{"id":"Gurgaon","mnth_year":"Jun-2020","type":"Partial","count":"0","weight":"1"},{"id":"Bhubaneswar","mnth_year":"Jun-2020","type":"Full","count":"1","weight":"1"},{"id":"Bhubaneswar","mnth_year":"Jun-2020","type":"Partial","count":"0","weight":"1"},{"id":"Mississauga","mnth_year":"Jun-2020","type":"Full","count":"1","weight":"1"},{"id":"Mississauga","mnth_year":"Jun-2020","type":"Partial","count":"0","weight":"1"},{"id":"Metro Manila","mnth_year":"Jun-2020","type":"Full","count":"17","weight":"1"},{"id":"Metro Manila","mnth_year":"Jun-2020","type":"Partial","count":"0","weight":"1"},{"id":"Kolkata","mnth_year":"Jun-2020","type":"Full","count":"133","weight":"1"},{"id":"Kolkata","mnth_year":"Jun-2020","type":"Partial","count":"4","weight":"1"},{"id":"TCS-Kolkata","mnth_year":"Jun-2020","type":"Full","count":"1","weight":"1"},{"id":"TCS-Kolkata","mnth_year":"Jun-2020","type":"Partial","count":"1","weight":"1"},{"id":"Mumbai","mnth_year":"Jun-2020","type":"Full","count":"54","weight":"1"},{"id":"Mumbai","mnth_year":"Jun-2020","type":"Partial","count":"0","weight":"1"},{"id":"Hyderabad","mnth_year":"Jun-2020","type":"Full","count":"8","weight":"1"},{"id":"Hyderabad","mnth_year":"Jun-2020","type":"Partial","count":"0","weight":"1"},{"id":"Bangalore","mnth_year":"Jun-2020","type":"Full","count":"8","weight":"1"},{"id":"Bangalore","mnth_year":"Jun-2020","type":"Partial","count":"0","weight":"1"},{"id":"Bhubhaneshwar","mnth_year":"Jun-2020","type":"Full","count":"5","weight":"1"},{"id":"Bhubhaneshwar","mnth_year":"Jun-2020","type":"Partial","count":"0","weight":"1"},{"id":"Thousand Oaks","mnth_year":"Jun-2020","type":"Full","count":"78","weight":"1"},{"id":"Thousand Oaks","mnth_year":"Jun-2020","type":"Partial","count":"0","weight":"1"},{"id":"Coimbatore","mnth_year":"Jun-2020","type":"Full","count":"1","weight":"1"},{"id":"Coimbatore","mnth_year":"Jun-2020","type":"Partial","count":"0","weight":"1"},{"id":"TCS Kolkata","mnth_year":"Jun-2020","type":"Full","count":"1","weight":"1"},{"id":"TCS Kolkata","mnth_year":"Jun-2020","type":"Partial","count":"0","weight":"1"},{"id":"Pune","mnth_year":"Jun-2020","type":"Full","count":"472","weight":"1"},{"id":"Pune","mnth_year":"Jun-2020","type":"Partial","count":"0","weight":"1"},{"id":"Noida","mnth_year":"Jun-2020","type":"Full","count":"103","weight":"1"},{"id":"Noida","mnth_year":"Jun-2020","type":"Partial","count":"1","weight":"1"},{"id":"Montreal","mnth_year":"Jun-2020","type":"Full","count":"1","weight":"1"},{"id":"Montreal","mnth_year":"Jun-2020","type":"Partial","count":"0","weight":"1"},{"id":"Toronto","mnth_year":"Jun-2020","type":"Full","count":"2","weight":"1"},{"id":"Toronto","mnth_year":"Jun-2020","type":"Partial","count":"0","weight":"1"}];
+//console.log(data);
+//console.log(id);
+//console.log(type);
+d3.selectAll(".asterpltloc").remove();
+var data_new = data.filter(function(d){return d.mnth_year === id && d.type===type && d.id != "Total"});
+//console.log(data_new);
+
+var width = 350,
+    height = 500,
+	topmargin = 50,
+    radius = Math.min(width-100, height) / 2,
+    innerRadius = 0.3 * radius;
+
+var pie = d3.pie()
+    .sort(null)
+    .value(function(d) { return d.width; });
+
+var tip = d3.tip()
+  .attr('class', 'd3-tip')
+  .offset([0, 0])
+  .html(function(d) {
+    return d.data.id + ": <span style='color:orangered'>" + d.data.count + "</span>";
+  });
+  
+var resourcecount = [];
+var idrray = [];
+  
+  data_new.forEach(function(d) {
+    d.id     =  d.id;
+    d.count  = +d.count;
+    d.weight = +d.weight;
+    d.width  = +d.weight;
+	resourcecount.push(d.count);
+	idrray.push(d.id)
+  });
+  
+var max_resource_count = d3.max(resourcecount);
+idrray=d3.set(idrray).values();
+
+   // calculate the total score
+  var score = 
+    data_new.reduce(function(a, b) {
+      //console.log('a:' + a + ', b.score: ' + b.score + ', b.weight: ' + b.weight);
+      return a + (b.resources * b.weight); 
+    }, 0) ;
+
+//var arc = d3.svg.arc()
+var arc = d3.arc()
+  .innerRadius(innerRadius)
+  .outerRadius(function (d) { 
+    return (radius - innerRadius) * (d.data.count / max_resource_count) + innerRadius; 
+  });
+
+//var outlineArc = d3.svg.arc()
+var outlineArc = d3.arc()
+        .innerRadius(innerRadius)
+        .outerRadius(radius);
+
+var svg3 = d3.select(".asterplotlocation").append("svg")
+    .attr("width", width)
+    .attr("height", height+topmargin)
+	.attr("class","asterpltloc")
+    .append("g")
+    .attr("transform", "translate(" + (width-100) / 2 + "," + ((height+topmargin)/ 2) + ")");
+
+svg3.call(tip);
+
+  
+  // for (var i = 0; i < data.score; i++) { console.log(data[i].id) }
+  
+  var color = d3.scaleOrdinal(d3.schemeCategory10);
+  
+  var path = svg3.selectAll(".solidArc")
+      .data(pie(data_new))
+    .enter().append("path")
+      .attr("fill", function(d) { return color(d.data.id); })
+      .attr("class", "solidArc")
+      .attr("stroke", "gray")
+      .attr("d", arc)
+      .on('mouseover', tip.show)
+		.on('mouseout', tip.hide)
+		.on('click', function(d){selected_id = d.data.id; tabulate(data_new, ["id", "mnth_year","count", "weight"],selected_id);});
+
+  var outerPath = svg3.selectAll(".outlineArc")
+      .data(pie(data_new))
+    .enter().append("path")
+      .attr("fill", "none")
+      .attr("stroke", "gray")
+      .attr("class", "outlineArc")
+      .attr("d", outlineArc);
+
+
+
+  // calculate the weighted mean score
+  var score = 
+    data_new.reduce(function(a, b) {
+      //console.log('a:' + a + ', b.score: ' + b.score + ', b.weight: ' + b.weight);
+      return a + (b.count * b.weight); 
+    }, 0) ;
+
+  svg3.append("svg:text")
+    .attr("class", "aster-score")
+    .attr("dy", ".35em")
+    .attr("text-anchor", "middle") // text-align: right
+    .text(Math.round(score));
+	
+  var size = 10  
+  svg3.selectAll("mydots")
+  .data(idrray)
+  .enter()
+  .append("rect")
+    .attr('class','rectind')
+    .attr("x", width-220)
+    .attr("y", function(d,i){ return -200 + i*(size+5)}) // 100 is where the first dot appears. 25 is the distance between dots
+    .attr("width", size)
+    .attr("height", size)
+    .style("fill", function(d){ return color(d)})
+	.style("opacity",0.5)	
+	.on('click', function(d){tabulate(data_new, ["id", "mnth_year","count", "weight"],d);});
+	
+  // Add one dot in the legend for each name.
+  svg3.selectAll("mylabels")
+  .data(idrray)
+  .enter()
+  .append("text")
+    .attr("x", width-220 + size*1.1)
+    .attr("y", function(d,i){ return -200 + i*(size+5) + (size/2)}) // 100 is where the first dot appears. 25 is the distance between dots
+    .style("fill", function(d){ return color(d)})
+    .text(function(d){ return d})
+    .attr("text-anchor", "left")
+    .style("alignment-baseline", "middle")
+	.style("font-size",10)
+	.on('click', function(d){tabulate(data_new, ["id", "mnth_year","count", "weight"],d);})
+	
+}
+
+
+		
+
+  // The table generation function
+function tabulate(data_new,columns,id) {
+
+    d3.selectAll("table").remove();
+    var data_table = data_new.filter(function(d){return d.id ===id});
+    var table = d3.select("body").append("table")
+            .attr("style", "margin-left: 200px")
+            .style("border-collapse", "collapse")// <= Add this line in
+            .style("border", "2px black solid"), // <= Add this line in
+        thead = table.append("thead"),
+        tbody = table.append("tbody");
+
+    // append the header row
+    thead.append("tr")
+        .selectAll("th")
+        .data(columns)
+        .enter()
+        .append("th")
+            .text(function(column) { return column; });
+
+    // create a row for each object in the data
+    var rows = tbody.selectAll("tr")
+        .data(data_table)
+        .enter()
+        .append("tr");
+
+    // create a cell in each row for each column
+    var cells = rows.selectAll("td")
+        .data(function(row) {
+            return columns.map(function(column) {
+                return {column: column, value: row[column]};
+            });
+        })
+        .enter()
+        .append("td")
+        .attr("style", "font-family: Courier") // sets the font style
+            .html(function(d) { return d.value; });
+    
+    return table;
+}
+
+</script>
+
+	
+</body>

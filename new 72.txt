@@ -1,0 +1,3 @@
+https://my-json-server.typicode.com/avishek1981/jsondata
+
+https://my-json-server.typicode.com/avishek1981/jsondata/get

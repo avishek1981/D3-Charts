@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<html>
+<head>
+<title> Learning D3 Js</title>
+</head>
+<body>
+<h1> Creating static Bar Chart</h1>
+<div id = "chart"></div>
+
+<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+<script>
+        var myData= [20,30,40,50,60,70];
+        var width = 500;
+        var height = 500;
+        
+        
+		var xScale = d3.scale.ordinal()
+                    .domain(d3.range(0,myData.length))
+					.rangeBands([0, width]);
+ 
+                    
+        var yScale = d3.scale.linear()
+		               .domain([0,d3.max(myData)])
+                       .range([0,height])
+                       
+        var Color = d3.scale.linear()
+                       .domain([0,d3.max(myData)])
+                       .range(['#111E6C','#008081']); 
+					   
+        var tooltip = d3.select('body').append('div')
+                       .style('position','absolute');		
+                       
+        d3.select('#chart').append('svg')
+          .attr('width',width)
+          .attr('height',height)
+          .selectAll('rect')
+            .data(myData)
+            .enter().append('rect')
+            .attr('width',xScale.rangeBand())
+            .attr('height',function(d){return yScale(d);})
+            .style('fill',function(d,i){return Color(d);})
+            .attr('x',function(d,i){return xScale(i);})
+            .attr('y',function(d){return height-yScale(d);})
+			.on('mouseover', function(d){tooltip.transition()
+			                                    .style("opacity",1)
+									     tooltip.html(d)
+										        .style("left", (d3.event.pageX) + "px")		
+                                                .style("top", (d3.event.pageY) + "px");
+												})
+            .on('mouseout',	function(d){tooltip.transition()
+			                                    .style("opacity",0)
+												})											
+
+
+</script>
+</body>
+</html>			

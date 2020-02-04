@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+path {
+  stroke: #fff;
+}
+</style>
+<body>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script>
+
+ //alert(JSON.stringify(data_old));
+var data_old = {
+  "data": [{
+    "items": ["Furniture", "Bookcases", "red", 7708.748564]
+  }, {
+    "items": ["Furniture", "Bookcases", "blue", 7708.748564]
+  }, {
+    "items": ["Furniture", "Chairs & Chairmats", 165348.88276]
+  }, {
+    "items": ["Furniture", "Office Furnishings", 92209.2258667999]
+  }, {
+    "items": ["Furniture", "Tables", 72495.061874750027]
+  }, {
+    "items": ["Office Supplies", "Appliances", 121651.39137999997]
+  }, {
+    "items": ["Office Supplies", "Binders and Binder Accessories", 226572.52304199972]
+  }, {
+    "items": ["Office Supplies", "Envelopes", 46133.223839999984]
+  }, {
+    "items": ["Office Supplies", "Labels", 17775.320505000007]
+  }, {
+    "items": ["Office Supplies", "Paper", 35361.621737600013]
+  }, {
+    "items": ["Office Supplies", "Pens & Art Supplies", 1195.9028397999941]
+  }, {
+    "items": ["Office Supplies", "Rubber Bands", 2841.7224594000013]
+  }, {
+    "items": ["Office Supplies", "Scissors, Rulers and Trimmers", 1936.8491199999985]
+  }, {
+    "items": ["Office Supplies", "Storage & Organization", 8078.8047267999918]
+  }, {
+    "items": ["Technology", "Computer Peripherals", 87917.842512599935]
+  }, {
+    "items": ["Technology", "Copiers and Fax", 129156.68402999993]
+  }, {
+    "items": ["Technology", "Office Machines", 168072.83333959983]
+  }, {
+    "items": ["Technology", "Telephones and Communication", 297950.52486559981]
+  }]
+};
+
+     
+var width = window.innerWidth,
+    height = window.innerHeight,
+    maxRadius = Math.min(width, height)/2.5   ;
+                
+
+var formatNumber = d3.format(',d');
+var x = d3.scaleLinear().range([0, 2 * Math.PI]).clamp(true);
+var y = d3.scaleSqrt().range([maxRadius * .1, maxRadius]);
+
+//alert(height);
+
+var color = d3.scaleOrdinal(d3.schemeCategory20);
+var partition = d3.partition();
+var arc = d3.arc().startAngle(function (d) {
+  return x(d.x0);
+}).endAngle(function (d) {
+  return x(d.x1);
+}).innerRadius(function (d) {
+  return Math.max(0, y(d.y0));
+}).outerRadius(function (d) {
+  return Math.max(0, y(d.y1));
+}); 
+
+
+var middleArcLine = function middleArcLine(d) {
+  var halfPi = Math.PI / 2;
+  var angles = [x(d.x0) - halfPi, x(d.x1) - halfPi];
+  var r = Math.max(0, (y(d.y0) + y(d.y1)) / 2);
+  var middleAngle = (angles[1] + angles[0]) / 2;
+  var invertDirection = middleAngle > 0 && middleAngle < Math.PI; // On lower quadrants write text ccw
+
+  if (invertDirection) {
+    angles.reverse();
+  }
+
+  var path = d3.path();
+  path.arc(0, 0, r, angles[0], angles[1], invertDirection);
+  return path.toString();
+};
+
+var textFits = function textFits(d) {
+  var CHAR_SPACE = 4;
+  var deltaAngle = x(d.x1) - x(d.x0);
+  var r = Math.max(0, (y(d.y0) + y(d.y1)) / 2);
+  var perimeter = r * deltaAngle ;
+  //return d.data.name.length * CHAR_SPACE < perimeter;
+  return d.data.name.length * CHAR_SPACE < perimeter;
+};
+
+d3.select("svg").remove(); 
+
+var svg = d3.select('body').append('svg').style('width', '100vw').style('height', '300vh').attr('viewBox', "".concat(-width / 2, " ").concat(-height / 2, " ").concat(width, " ").concat(height)).on('click', function () {
+return focusOn();
+}); // Reset zoom on canvas click
+
+
+var root = d3.hierarchy(jsonFormatter(data_old));
+root.sum(function (d) {
+  return d.size;
+});
+var slice = svg.selectAll('g.slice').data(partition(root).descendants());
+slice.exit().remove();
+var newSlice = slice.enter().append('g').attr('class', 'slice').on('click', function (d) {
+  d3.event.stopPropagation();
+  focusOn(d);
+});
+newSlice.append('title').text(function (d) {
+  return d.data.name + '\n' + formatNumber(d.value);
+});
+newSlice.append('path').attr('class', 'main-arc').style('fill', function (d) {
+  return color((d.children ? d : d.parent).data.name);
+}).attr('d', arc);
+newSlice.append('path').attr('class', 'hidden-arc').attr('id', function (_, i) {
+  return "hiddenArc".concat(i);
+}).attr('d', middleArcLine);
+var text = newSlice.append('text').attr('display', function (d) {
+  return textFits(d) ? null : 'none';
+}); // Add white contour
+
+text.append('textPath').attr('startOffset', '50%').attr('xlink:href', function (_, i) {
+  return "#hiddenArc".concat(i);
+}).text(function (d) {
+  return d.data.name;
+}).style('fill', 'none').style('stroke-width', 5).style('stroke-linejoin', 'round');
+text.append('textPath').attr('startOffset', '50%').attr('xlink:href', function (_, i) {
+  return "#hiddenArc".concat(i);
+}).text(function (d) {
+  return d.data.name + '(' + formatNumber(d.value)+')' ;
+}); // });
+
+function focusOn() {
+  var d = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {
+    x0: 0,
+    x1: 1,
+    y0: 0,
+    y1: 1
+  };
+  // Reset to top-level if no data point specified
+  var transition = svg.transition().duration(750).tween('scale', function () {
+    var xd = d3.interpolate(x.domain(), [d.x0, d.x1]),
+        yd = d3.interpolate(y.domain(), [d.y0, 1]);
+    return function (t) {
+                                //alert(t)
+      x.domain(xd(t));
+      y.domain(yd(t));
+    };
+  });
+  
+    transition.selectAll('path.main-arc').attrTween('d', function (d) {
+    return function () {
+      return arc(d);
+    };
+  });
+  transition.selectAll('path.hidden-arc').attrTween('d', function (d) {
+    return function () {
+      return middleArcLine(d);
+    };
+  });
+  transition.selectAll('text').attrTween('display', function (d) {
+    return function () {
+      return textFits(d) ? null : 'none';
+    };
+  });
+  moveStackToFront(d); //
+
+  function moveStackToFront(elD) {
+    svg.selectAll('.slice').filter(function (d) {
+      return d === elD;
+    }).each(function (d) {
+      this.parentNode.appendChild(this);
+
+      if (d.parent) {
+        moveStackToFront(d.parent);
+      }
+    });
+  }
+}
+
+function jsonFormatter(data) {
+  var object = {
+    "name": "Total",
+    "children": []
+  };
+  var parent = [];
+  data.data.forEach(function (element) {
+    parent.push(element.items[0]);
+  });
+  var parentSet = new Set(parent);
+  parentSet = Array.from(parentSet);
+  parentSet.forEach(function (val) {
+    object.children.push(typeA(val));
+  });
+  data.data.forEach(function (element) {
+    // object.children[element.items[0]].push(typeB(element.items[1],element.items[2]))
+    object.children.forEach(function (parent) {
+      if (parent.name === element.items[0]) {
+        parent.children.push(typeB(element.items[1], element.items[2]));
+      }
+    });
+  });
+  return object;
+}
+
+function typeA(name) {
+  return {
+    "name": name,
+    "children": []
+  };
+}
+
+function typeB(name, size) {
+  return {
+    "name": name,
+    "size": size
+  };
+}
+
+//var element = document.getElementById("svg");
+//element.scrollIntoView({behavior: "smooth", block: "svg", inline: "nearest"});
+window.scrollTo(0, height);
+F
+
+</script>

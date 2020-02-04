@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<!-- Load d3.js -->
+<script src="https://d3js.org/d3.v4.js"></script>
+
+<!-- Create a div where the graph will take place -->
+<div id="my_dataviz"></div>
+
+<script>
+
+// set the dimensions and margins of the graph
+var margin = {top: 10, right: 30, bottom: 90, left: 40},
+    width = 460 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+
+// append the svg object to the body of the page
+var svg = d3.select("#my_dataviz")
+  .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform",
+          "translate(" + margin.left + "," + margin.top + ")");
+
+// Parse the Data
+var data= [
+ {
+   "Label": "United States",
+   "Value": 12394
+ },
+ {
+   "Label": "Russia",
+   "Value": 6148
+ },
+ {
+   "Label": "Germany (FRG)",
+   "Value": 1653
+ },
+ {
+   "Label": "France",
+   "Value": 2162
+ },
+ {
+   "Label": "United Kingdom",
+   "Value": 1214
+ },
+ {
+   "Label": "China",
+   "Value": 1131
+ },
+ {
+   "Label": "Spain",
+   "Value": 814
+ },
+ {
+   "Label": "Netherlands",
+   "Value": 1167
+ },
+ {
+   "Label": "Italy",
+   "Value": 660
+ },
+ {
+   "Label": "Israel",
+   "Value": 1263
+ }
+]
+
+// X axis
+var x = d3.scaleBand()
+  .range([ 0, width ])
+  .domain(data.map(function(d) { return d.Label; }))
+  .padding(1);
+svg.append("g")
+  .attr("transform", "translate(0," + height + ")")
+  .call(d3.axisBottom(x))
+  .selectAll("text")
+    .attr("transform", "translate(-10,0)rotate(-45)")
+    .style("text-anchor", "end");
+
+// Add Y axis
+var y = d3.scaleLinear()
+  .domain([0, 13000])
+  .range([ height, 0]);
+svg.append("g")
+  .call(d3.axisLeft(y));
+
+// Lines
+svg.selectAll("myline")
+  .data(data)
+  .enter()
+  .append("line")
+    .attr("x1", function(d) { return x(d.Label); })
+    .attr("x2", function(d) { return x(d.Label); })
+    .attr("y1", function(d) { return y(d.Value); })
+    .attr("y2", y(0))
+    .attr("stroke", "grey")
+
+// Circles
+svg.selectAll("mycircle")
+  .data(data)
+  .enter()
+  .append("circle")
+    .attr("cx", function(d) { return x(d.Label); })
+    .attr("cy", function(d) { return y(d.Value); })
+    .attr("r", "4")
+    .style("fill", "#69b3a2")
+    .attr("stroke", "black")
+
+
+</script>

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+svg {
+    font-family: Sans-Serif, Arial;
+}
+.line {
+  stroke-width: 2;
+  fill: none;
+}
+
+.axis path {
+  stroke: black;
+}
+
+.text {
+  font-size: 12px;
+}
+
+.title-text {
+  font-size: 12px;
+}
+</style>
+<html>
+  <head>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+  <body>
+        <div id="chart"></div>
+  </body>
+</html>
+<script>
+
+var data =  [{"mgrname":"Abhinav Gupta","values":[{"year":2018,"qtr":"Q1","rev":3175051,"yearqtr":"2018Q1","mgrname":"Abhinav Gupta"},{"year":2018,"qtr":"Q2","rev":3222000,"yearqtr":"2018Q2","mgrname":"Abhinav Gupta"},{"year":2018,"qtr":"Q3","rev":3175740,"yearqtr":"2018Q3","mgrname":"Abhinav Gupta"},{"year":2019,"qtr":"Q1","rev":3661025,"yearqtr":"2019Q1","mgrname":"Abhinav Gupta"},{"year":2019,"qtr":"Q2","rev":3004708,"yearqtr":"2019Q2","mgrname":"Abhinav Gupta"},{"year":2019,"qtr":"Q3","rev":3098077,"yearqtr":"2019Q3","mgrname":"Abhinav Gupta"},{"year":2019,"qtr":"Q4","rev":3270740,"yearqtr":"2019Q4","mgrname":"Abhinav Gupta"},{"year":2020,"qtr":"Q4","rev":3208077,"yearqtr":"2020Q4","mgrname":"Abhinav Gupta"}]},{"mgrname":"Sujata Tayade","values":[{"year":2018,"qtr":"Q1","rev":302861,"yearqtr":"2018Q1","mgrname":"Sujata Tayade"},{"year":2018,"qtr":"Q2","rev":565520,"yearqtr":"2018Q2","mgrname":"Sujata Tayade"},{"year":2018,"qtr":"Q3","rev":723581,"yearqtr":"2018Q3","mgrname":"Sujata Tayade"},{"year":2019,"qtr":"Q1","rev":735555,"yearqtr":"2019Q1","mgrname":"Sujata Tayade"},{"year":2019,"qtr":"Q2","rev":698596,"yearqtr":"2019Q2","mgrname":"Sujata Tayade"},{"year":2019,"qtr":"Q3","rev":430393,"yearqtr":"2019Q3","mgrname":"Sujata Tayade"},{"year":2019,"qtr":"Q4","rev":926738,"yearqtr":"2019Q4","mgrname":"Sujata Tayade"},{"year":2020,"qtr":"Q4","rev":437886,"yearqtr":"2020Q4","mgrname":"Sujata Tayade"}]},{"mgrname":"Abhijit Roy","values":[{"year":2018,"qtr":"Q1","rev":748888,"yearqtr":"2018Q1","mgrname":"Abhijit Roy"},{"year":2018,"qtr":"Q2","rev":504658,"yearqtr":"2018Q2","mgrname":"Abhijit Roy"},{"year":2018,"qtr":"Q3","rev":933337,"yearqtr":"2018Q3","mgrname":"Abhijit Roy"},{"year":2019,"qtr":"Q1","rev":1310465,"yearqtr":"2019Q1","mgrname":"Abhijit Roy"},{"year":2019,"qtr":"Q2","rev":1104613,"yearqtr":"2019Q2","mgrname":"Abhijit Roy"},{"year":2019,"qtr":"Q3","rev":2602251,"yearqtr":"2019Q3","mgrname":"Abhijit Roy"},{"year":2019,"qtr":"Q4","rev":700704,"yearqtr":"2019Q4","mgrname":"Abhijit Roy"},{"year":2020,"qtr":"Q1","rev":1487684,"yearqtr":"2020Q1","mgrname":"Abhijit Roy"},{"year":2020,"qtr":"Q2","rev":1309783,"yearqtr":"2020Q2","mgrname":"Abhijit Roy"},{"year":2020,"qtr":"Q3","rev":954573,"yearqtr":"2020Q3","mgrname":"Abhijit Roy"},{"year":2020,"qtr":"Q4","rev":1788333,"yearqtr":"2020Q4","mgrname":"Abhijit Roy"}]},{"mgrname":"Amit Singh","values":[{"year":2018,"qtr":"Q1","rev":1667541,"yearqtr":"2018Q1","mgrname":"Amit Singh"},{"year":2018,"qtr":"Q2","rev":1642456,"yearqtr":"2018Q2","mgrname":"Amit Singh"},{"year":2018,"qtr":"Q3","rev":1902261,"yearqtr":"2018Q3","mgrname":"Amit Singh"},{"year":2019,"qtr":"Q1","rev":1717396,"yearqtr":"2019Q1","mgrname":"Amit Singh"},{"year":2019,"qtr":"Q2","rev":1747999,"yearqtr":"2019Q2","mgrname":"Amit Singh"},{"year":2019,"qtr":"Q3","rev":1484811,"yearqtr":"2019Q3","mgrname":"Amit Singh"},{"year":2019,"qtr":"Q4","rev":1733739,"yearqtr":"2019Q4","mgrname":"Amit Singh"},{"year":2020,"qtr":"Q1","rev":100,"yearqtr":"2020Q1","mgrname":"Amit Singh"},{"year":2020,"qtr":"Q4","rev":1552093,"yearqtr":"2020Q4","mgrname":"Amit Singh"}]},{"mgrname":"Saravana Kumar","values":[{"year":2018,"qtr":"Q1","rev":631418,"yearqtr":"2018Q1","mgrname":"Saravana Kumar"},{"year":2018,"qtr":"Q2","rev":699955,"yearqtr":"2018Q2","mgrname":"Saravana Kumar"},{"year":2018,"qtr":"Q3","rev":622270,"yearqtr":"2018Q3","mgrname":"Saravana Kumar"},{"year":2019,"qtr":"Q4","rev":200000,"yearqtr":"2019Q4","mgrname":"Saravana Kumar"}]},{"mgrname":"Ranga Kuchlyan","values":[{"year":2018,"qtr":"Q1","rev":1338417,"yearqtr":"2018Q1","mgrname":"Ranga Kuchlyan"},{"year":2018,"qtr":"Q2","rev":1928185,"yearqtr":"2018Q2","mgrname":"Ranga Kuchlyan"},{"year":2018,"qtr":"Q3","rev":2230749,"yearqtr":"2018Q3","mgrname":"Ranga Kuchlyan"},{"year":2019,"qtr":"Q1","rev":669125,"yearqtr":"2019Q1","mgrname":"Ranga Kuchlyan"},{"year":2019,"qtr":"Q4","rev":1771153,"yearqtr":"2019Q4","mgrname":"Ranga Kuchlyan"}]},{"mgrname":"Sourav Roy","values":[{"year":2018,"qtr":"Q1","rev":834070,"yearqtr":"2018Q1","mgrname":"Sourav Roy"},{"year":2018,"qtr":"Q2","rev":441000,"yearqtr":"2018Q2","mgrname":"Sourav Roy"},{"year":2018,"qtr":"Q3","rev":448623,"yearqtr":"2018Q3","mgrname":"Sourav Roy"},{"year":2019,"qtr":"Q1","rev":1615184,"yearqtr":"2019Q1","mgrname":"Sourav Roy"},{"year":2019,"qtr":"Q2","rev":1409812,"yearqtr":"2019Q2","mgrname":"Sourav Roy"},{"year":2019,"qtr":"Q3","rev":1152534,"yearqtr":"2019Q3","mgrname":"Sourav Roy"},{"year":2019,"qtr":"Q4","rev":732932,"yearqtr":"2019Q4","mgrname":"Sourav Roy"},{"year":2020,"qtr":"Q4","rev":575927,"yearqtr":"2020Q4","mgrname":"Sourav Roy"}]},{"mgrname":"Preeti Mohapatra","values":[{"year":2018,"qtr":"Q1","rev":1107531,"yearqtr":"2018Q1","mgrname":"Preeti Mohapatra"},{"year":2018,"qtr":"Q2","rev":1234461,"yearqtr":"2018Q2","mgrname":"Preeti Mohapatra"},{"year":2018,"qtr":"Q3","rev":1347993,"yearqtr":"2018Q3","mgrname":"Preeti Mohapatra"},{"year":2019,"qtr":"Q1","rev":1009549,"yearqtr":"2019Q1","mgrname":"Preeti Mohapatra"},{"year":2019,"qtr":"Q2","rev":1029723,"yearqtr":"2019Q2","mgrname":"Preeti Mohapatra"},{"year":2019,"qtr":"Q3","rev":793948,"yearqtr":"2019Q3","mgrname":"Preeti Mohapatra"},{"year":2019,"qtr":"Q4","rev":1099140,"yearqtr":"2019Q4","mgrname":"Preeti Mohapatra"},{"year":2020,"qtr":"Q4","rev":1079540,"yearqtr":"2020Q4","mgrname":"Preeti Mohapatra"}]}]; 
+
+//var width = 1200;
+var width = window.innerWidth
+//var height = 500;
+var height = window.innerHeight
+var margin = window.innerWidth/6;
+var duration = 250;
+
+var lineOpacity = "0.25";
+var lineOpacityHover = "0.85";
+var otherLinesOpacityHover = "0.1";
+var lineStroke = "1.5px";
+var lineStrokeHover = "2.5px";
+
+var circleOpacity = '0.85';
+var circleOpacityOnLineHover = "0.25"
+var circleRadius = 3;
+var circleRadiusHover = 6;
+
+
+/* Format Data */
+var parseDate = d3.timeParse("%b/%Y");
+
+var mgrnamearray = [];
+var monthyear = [];  /* changed after v1 to adjust scale */
+var revenue = []; /* changed after v1 to adjust scale*/
+
+
+function parsequarter(d) {
+    var splitted = d.split('-');
+    var quarterEndMonth = splitted[0].charAt(1) * 3;
+    console.log(quarterEndMonth);
+    return d3.timeParse('%m-%Y')(quarterEndMonth + '-' + splitted[1]);
+}
+
+data.forEach(function(d) { 
+  mgrnamearray.push(d.mgrname)
+  d.values.forEach(function(d) {
+    d.qtr = d.qtr.trim();
+    d.year = (d.qtr + "-" + d.year);
+	d.year = parsequarter(d.year);
+	
+    d.rev = +d.rev;    
+    monthyear.push(d.year); /* changed after v1 */
+    revenue.push(d.rev);	/* changed after v1 */
+  });
+});
+
+mgrnamearray=d3.set(mgrnamearray).values();
+
+  
+var xScale = d3.scaleTime()
+  .domain([d3.min(monthyear),d3.max(monthyear)]) /* changed after v1 to adjust scale */
+  .range([0, width]);  
+
+  
+var yScale = d3.scaleLinear()
+  .domain([0,d3.max(revenue)]) /* changed after v1 to adjust scale */
+  .range([height-margin, 0]);
+
+var color = d3.scaleOrdinal(d3.schemeCategory10);
+
+/* Add SVG */
+var svg = d3.select("#chart").append("svg")
+  .attr("width", (width+margin)+"px")
+  .attr("height", (height+margin)+"px")
+  .append('g')
+ // .attr("transform", `translate(${margin}, ${margin})`);
+  .attr("transform", `translate(100,100)`);
+
+/* Add line into SVG */
+var line = d3.line()
+   .curve(d3.curveCatmullRom)
+    .x(d => xScale(d.year))
+  .y(d => yScale(d.rev));
+
+let lines = svg.append('g')
+  .attr('class', 'lines');
+
+lines.selectAll('.line-group')
+  .data(data).enter()
+  .append('g')
+  .attr('class', 'line-group')  
+  .on("mouseover", function(d, i) {
+      svg.append("text")
+        .attr("class", "title-text")
+        .style("fill", color(d.mgrname))        
+        .text(d.mgrname)
+        .attr("text-anchor", "middle")
+        .attr("x", (width-margin)/2)
+        .attr("y", 5);
+    })
+  .on("mouseout", function(d) {
+      svg.select(".title-text").remove();
+    })
+  .append('path')
+  .attr('class', 'line')  
+  .attr('d', d => line(d.values))
+  .style('stroke', (d, i) => color(d.mgrname))
+  .style('opacity', lineOpacity)
+  .on("mouseover", function(d) {
+      d3.selectAll('.line')
+					.style('opacity', otherLinesOpacityHover);
+      d3.selectAll('.circle')
+					.style('opacity', circleOpacityOnLineHover);
+      d3.select(this)
+        .style('opacity', lineOpacityHover)
+        .style("stroke-width", lineStrokeHover)
+        .style("cursor", "pointer");
+    })
+  .on("mouseout", function(d) {
+      d3.selectAll(".line")
+					.style('opacity', lineOpacity);
+      d3.selectAll('.circle')
+					.style('opacity', circleOpacity);
+      d3.select(this)
+        .style("stroke-width", lineStroke)
+        .style("cursor", "none");
+    });
+
+	var formatTime = d3.timeFormat("%b-%Y")
+
+/* Add circles in the line */
+lines.selectAll("circle-group")
+  .data(data).enter()
+  .append("g")
+  .style("fill", (d, i) => color(d.mgrname))
+  .selectAll("circle")
+  .data(d => d.values).enter()
+  //.data(data).enter()
+  .append("g")
+  .attr("class", "circle")  
+  .on("mouseover", function(d,i) {
+      d3.select(this)     
+        .style("cursor", "pointer")
+        .append("text")
+        .attr("class", "text")
+        .text(`${d.mgrname} - $${d.rev}` + " (Quarter ending " + formatTime(d.year)+ ")")
+        .attr("x", d => xScale(d.year) + 5)
+        .attr("y", d => yScale(d.rev) - 10);
+    })
+  .on("mouseout", function(d) {
+      d3.select(this)
+        .style("cursor", "none")  
+        .transition()
+        .duration(duration)
+        .selectAll(".text").remove();
+    })
+  .append("circle")
+  .attr("cx", d => xScale(d.year))
+  .attr("cy", d => yScale(d.rev))
+  .attr("r", circleRadius)
+  .style('opacity', circleOpacity)
+  .on("mouseover", function(d) {
+        d3.select(this)
+          .transition()
+          .duration(duration)
+          .attr("r", circleRadiusHover);
+      })
+    .on("mouseout", function(d) {
+        d3.select(this) 
+          .transition()
+          .duration(duration)
+          .attr("r", circleRadius);  
+      });
+
+
+/* Add Axis into SVG */
+var xAxis = d3.axisBottom(xScale).tickValues(monthyear).tickFormat(formatTime);
+var yAxis = d3.axisLeft(yScale).ticks(10);
+
+svg.append("g")
+  .attr("class", "x axis")
+  .attr("transform", `translate(0, ${height-margin})`)
+  .call(xAxis)
+  /* added after v1 */
+  .selectAll("text")
+  .attr("dx", ".35em")
+  .attr("dy", "-.35em")
+  .attr("transform", "rotate(90)")
+  .style("text-anchor", "start");
+  /*.........................................*/
+
+ 
+svg.append("g")
+  .attr("class", "y axis")
+  .call(yAxis)
+  .append('text')
+  .attr("y", -60)
+  .attr("transform", "rotate(-90)")
+  .attr("fill", "#000")
+  .text("Revenue");
+ 
+var curdate = new Date; 
+alert(curdate);
+ //var formatcurdate=(curdate);
+svg.append("line")
+   .style("stroke", "black")  // colour the line
+    .attr("x1", xScale(curdate))     // x position of the first end of the line
+    .attr("y1", 0)      // y position of the first end of the line
+    .attr("x2", xScale(curdate))     // x position of the second end of the line
+    .attr("y2", (height-margin))
+   .attr("class", "ref-line")
+   .style("stroke-dasharray", ("3, 3"));
+
+  
+ var size = 10
+ var clicked = true
+svg.selectAll("mydots")
+  .data(mgrnamearray)
+  .enter()
+  .append("rect")
+    .attr("x", width-200)
+    .attr("y", function(d,i){ return -40 + i*(size+5)}) // 100 is where the first dot appears. 25 is the distance between dots
+    .attr("width", size)
+    .attr("height", size)
+    .style("fill", function(d){ return color(d)})
+	
+
+// Add one dot in the legend for each name.
+svg.selectAll("mylabels")
+  .data(mgrnamearray)
+  .enter()
+  .append("text")
+    .attr("x", width-200 + size*1.2)
+    .attr("y", function(d,i){ return -40 + i*(size+5) + (size/2)}) // 100 is where the first dot appears. 25 is the distance between dots
+    .style("fill", function(d){ return color(d)})
+    .text(function(d){ return d})
+    .attr("text-anchor", "left")
+    .style("alignment-baseline", "middle")
+</script>	
+
+	
+
+		
+

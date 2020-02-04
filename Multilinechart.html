@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+svg {
+    font-family: Sans-Serif, Arial;
+}
+.line {
+  stroke-width: 2;
+  fill: none;
+}
+
+.axis path {
+  stroke: black;
+}
+
+.text {
+  font-size: 12px;
+}
+
+.title-text {
+  font-size: 12px;
+}
+</style>
+<html>
+  <head>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+  <body>
+        <div id="chart"></div>
+  </body>
+</html>
+<script>
+ /* $(document).ready(function() {
+        $('#manager-dropdown').multiselect({includeSelectAllOption: true,
+            selectAllValue: 'Select All'});
+		$('#probability-dropdown').multiselect();
+		$('#year-dropdown').multiselect();
+		$('#quarter-dropdown').multiselect();
+    });*/
+var data =  [{"mgrname":"Abhinav Gupta","values":[{"year":2018,"rev":19520,"month":"APR","yearmonth":201804,"mgrname":"Abhinav Gupta"},{"year":2018,"qtr":"Q1 ","rev":841686,"month":"APR","yearmonth":201804,"mgrname":"Abhinav Gupta"},{"year":2018,"rev":20464,"month":"MAY","yearmonth":201805,"mgrname":"Abhinav Gupta"},{"year":2018,"qtr":"Q1 ","rev":1145640,"month":"MAY","yearmonth":201805,"mgrname":"Abhinav Gupta"},{"year":2018,"rev":19311,"month":"JUN","yearmonth":201806,"mgrname":"Abhinav Gupta"},{"year":2018,"qtr":"Q1 ","rev":1128430,"month":"JUN","yearmonth":201806,"mgrname":"Abhinav Gupta"},{"year":2018,"rev":20000,"month":"JUL","yearmonth":201807,"mgrname":"Abhinav Gupta"},{"year":2018,"qtr":"Q2 ","rev":1054000,"month":"JUL","yearmonth":201807,"mgrname":"Abhinav Gupta"},{"year":2018,"rev":20000,"month":"AUG","yearmonth":201808,"mgrname":"Abhinav Gupta"},{"year":2018,"qtr":"Q2 ","rev":1054000,"month":"AUG","yearmonth":201808,"mgrname":"Abhinav Gupta"},{"year":2018,"rev":20000,"month":"SEP","yearmonth":201809,"mgrname":"Abhinav Gupta"},{"year":2018,"qtr":"Q2 ","rev":1054000,"month":"SEP","yearmonth":201809,"mgrname":"Abhinav Gupta"},{"year":2018,"rev":20000,"month":"OCT","yearmonth":201810,"mgrname":"Abhinav Gupta"},{"year":2018,"qtr":"Q3 ","rev":1038580,"month":"OCT","yearmonth":201810,"mgrname":"Abhinav Gupta"},{"year":2018,"rev":20000,"month":"NOV","yearmonth":201811,"mgrname":"Abhinav Gupta"},{"year":2018,"qtr":"Q3 ","rev":1038580,"month":"NOV","yearmonth":201811,"mgrname":"Abhinav Gupta"},{"year":2018,"rev":20000,"month":"DEC","yearmonth":201812,"mgrname":"Abhinav Gupta"},{"year":2018,"qtr":"Q3 ","rev":1038580,"month":"DEC","yearmonth":201812,"mgrname":"Abhinav Gupta"},{"year":2019,"rev":206666,"month":"JAN","yearmonth":201901,"mgrname":"Abhinav Gupta"},{"year":2019,"qtr":"Q4 ","rev":1038580,"month":"JAN","yearmonth":201901,"mgrname":"Abhinav Gupta"},{"year":2019,"rev":206666,"month":"FEB","yearmonth":201902,"mgrname":"Abhinav Gupta"},{"year":2019,"qtr":"Q4 ","rev":1038580,"month":"FEB","yearmonth":201902,"mgrname":"Abhinav Gupta"},{"year":2019,"rev":241666,"month":"MAR","yearmonth":201903,"mgrname":"Abhinav Gupta"},{"year":2019,"qtr":"Q4 ","rev":1038580,"month":"MAR","yearmonth":201903,"mgrname":"Abhinav Gupta"},{"year":2019,"rev":1377100,"month":"APR","yearmonth":201904,"mgrname":"Abhinav Gupta"},{"year":2019,"rev":996290,"month":"MAY","yearmonth":201905,"mgrname":"Abhinav Gupta"},{"year":2019,"rev":1327635,"month":"JUN","yearmonth":201906,"mgrname":"Abhinav Gupta"},{"year":2019,"rev":1043577,"month":"JUL","yearmonth":201907,"mgrname":"Abhinav Gupta"},{"year":2019,"rev":1027272,"month":"AUG","yearmonth":201908,"mgrname":"Abhinav Gupta"},{"year":2019,"rev":1015859,"month":"SEP","yearmonth":201909,"mgrname":"Abhinav Gupta"},{"year":2019,"rev":1060359,"month":"OCT","yearmonth":201910,"mgrname":"Abhinav Gupta"},{"year":2019,"rev":1050359,"month":"NOV","yearmonth":201911,"mgrname":"Abhinav Gupta"},{"year":2019,"rev":1110359,"month":"DEC","yearmonth":201912,"mgrname":"Abhinav Gupta"},{"year":2020,"rev":1110359,"month":"JAN","yearmonth":202001,"mgrname":"Abhinav Gupta"},{"year":2020,"rev":1110359,"month":"FEB","yearmonth":202002,"mgrname":"Abhinav Gupta"},{"year":2020,"rev":1110359,"month":"MAR","yearmonth":202003,"mgrname":"Abhinav Gupta"}]},{"mgrname":"Sujata Tayade","values":[{"year":2018,"rev":-133768,"month":"APR","yearmonth":201804,"mgrname":"Sujata Tayade"},{"year":2018,"rev":74579,"month":"MAY","yearmonth":201805,"mgrname":"Sujata Tayade"},{"year":2018,"rev":362049,"month":"JUN","yearmonth":201806,"mgrname":"Sujata Tayade"},{"year":2018,"rev":209236,"month":"JUL","yearmonth":201807,"mgrname":"Sujata Tayade"},{"year":2018,"rev":254053,"month":"AUG","yearmonth":201808,"mgrname":"Sujata Tayade"},{"year":2018,"rev":335772,"month":"SEP","yearmonth":201809,"mgrname":"Sujata Tayade"},{"year":2018,"rev":382442,"month":"OCT","yearmonth":201810,"mgrname":"Sujata Tayade"},{"year":2018,"rev":382441,"month":"NOV","yearmonth":201811,"mgrname":"Sujata Tayade"},{"year":2018,"rev":389237,"month":"DEC","yearmonth":201812,"mgrname":"Sujata Tayade"},{"year":2019,"rev":329287,"month":"JAN","yearmonth":201901,"mgrname":"Sujata Tayade"},{"year":2019,"rev":274745,"month":"FEB","yearmonth":201902,"mgrname":"Sujata Tayade"},{"year":2019,"rev":322706,"month":"MAR","yearmonth":201903,"mgrname":"Sujata Tayade"},{"year":2019,"rev":254889,"month":"APR","yearmonth":201904,"mgrname":"Sujata Tayade"},{"year":2019,"rev":272482,"month":"MAY","yearmonth":201905,"mgrname":"Sujata Tayade"},{"year":2019,"rev":248183,"month":"JUN","yearmonth":201906,"mgrname":"Sujata Tayade"},{"year":2019,"rev":228493,"month":"JUL","yearmonth":201907,"mgrname":"Sujata Tayade"},{"year":2019,"rev":184848,"month":"AUG","yearmonth":201908,"mgrname":"Sujata Tayade"},{"year":2019,"rev":305255,"month":"SEP","yearmonth":201909,"mgrname":"Sujata Tayade"},{"year":2019,"rev":176961,"month":"OCT","yearmonth":201910,"mgrname":"Sujata Tayade"},{"year":2019,"rev":126716,"month":"NOV","yearmonth":201911,"mgrname":"Sujata Tayade"},{"year":2019,"rev":126716,"month":"DEC","yearmonth":201912,"mgrname":"Sujata Tayade"},{"year":2020,"rev":145962,"month":"JAN","yearmonth":202001,"mgrname":"Sujata Tayade"},{"year":2020,"rev":145962,"month":"FEB","yearmonth":202002,"mgrname":"Sujata Tayade"},{"year":2020,"rev":145962,"month":"MAR","yearmonth":202003,"mgrname":"Sujata Tayade"}]},{"mgrname":"Abhijit Roy","values":[{"year":2018,"rev":94383,"month":"APR","yearmonth":201804,"mgrname":"Abhijit Roy"},{"year":2018,"qtr":"Q1 ","rev":17237,"month":"APR","yearmonth":201804,"mgrname":"Abhijit Roy"},{"year":2018,"rev":193718,"month":"MAY","yearmonth":201805,"mgrname":"Abhijit Roy"},{"year":2018,"qtr":"Q1 ","rev":17237,"month":"MAY","yearmonth":201805,"mgrname":"Abhijit Roy"},{"year":2018,"rev":384889,"month":"JUN","yearmonth":201806,"mgrname":"Abhijit Roy"},{"year":2018,"qtr":"Q1 ","rev":45207,"month":"JUN","yearmonth":201806,"mgrname":"Abhijit Roy"},{"year":2018,"rev":60729,"month":"JUL","yearmonth":201807,"mgrname":"Abhijit Roy"},{"year":2018,"qtr":"Q2 ","rev":20027,"month":"JUL","yearmonth":201807,"mgrname":"Abhijit Roy"},{"year":2018,"rev":116103,"month":"AUG","yearmonth":201808,"mgrname":"Abhijit Roy"},{"year":2018,"qtr":"Q2 ","rev":20027,"month":"AUG","yearmonth":201808,"mgrname":"Abhijit Roy"},{"year":2018,"rev":509596,"month":"SEP","yearmonth":201809,"mgrname":"Abhijit Roy"},{"year":2018,"qtr":"Q2 ","rev":72852,"month":"SEP","yearmonth":201809,"mgrname":"Abhijit Roy"},{"year":2018,"rev":458891,"month":"OCT","yearmonth":201810,"mgrname":"Abhijit Roy"},{"year":2018,"qtr":"Q3 ","rev":37635,"month":"OCT","yearmonth":201810,"mgrname":"Abhijit Roy"},{"year":2018,"rev":786022,"month":"NOV","yearmonth":201811,"mgrname":"Abhijit Roy"},{"year":2018,"qtr":"Q3 ","rev":37635,"month":"NOV","yearmonth":201811,"mgrname":"Abhijit Roy"},{"year":2018,"rev":743368,"month":"DEC","yearmonth":201812,"mgrname":"Abhijit Roy"},{"year":2018,"qtr":"Q3 ","rev":37635,"month":"DEC","yearmonth":201812,"mgrname":"Abhijit Roy"},{"year":2019,"rev":221379,"month":"JAN","yearmonth":201901,"mgrname":"Abhijit Roy"},{"year":2019,"qtr":"Q4 ","rev":49717,"month":"JAN","yearmonth":201901,"mgrname":"Abhijit Roy"},{"year":2019,"rev":221679,"month":"FEB","yearmonth":201902,"mgrname":"Abhijit Roy"},{"year":2019,"qtr":"Q4 ","rev":49717,"month":"FEB","yearmonth":201902,"mgrname":"Abhijit Roy"},{"year":2019,"rev":321878,"month":"MAR","yearmonth":201903,"mgrname":"Abhijit Roy"},{"year":2019,"qtr":"Q4 ","rev":49717,"month":"MAR","yearmonth":201903,"mgrname":"Abhijit Roy"},{"year":2019,"rev":699373,"month":"APR","yearmonth":201904,"mgrname":"Abhijit Roy"},{"year":2019,"qtr":"Q1 ","rev":67110,"month":"APR","yearmonth":201904,"mgrname":"Abhijit Roy"},{"year":2019,"rev":702748,"month":"MAY","yearmonth":201905,"mgrname":"Abhijit Roy"},{"year":2019,"qtr":"Q1 ","rev":67109,"month":"MAY","yearmonth":201905,"mgrname":"Abhijit Roy"},{"year":2019,"rev":743299,"month":"JUN","yearmonth":201906,"mgrname":"Abhijit Roy"},{"year":2019,"qtr":"Q1 ","rev":67109,"month":"JUN","yearmonth":201906,"mgrname":"Abhijit Roy"},{"year":2019,"rev":674259,"month":"JUL","yearmonth":201907,"mgrname":"Abhijit Roy"},{"year":2019,"qtr":"Q2 ","rev":67109,"month":"JUL","yearmonth":201907,"mgrname":"Abhijit Roy"},{"year":2019,"rev":1180925,"month":"AUG","yearmonth":201908,"mgrname":"Abhijit Roy"},{"year":2019,"qtr":"Q2 ","rev":113685,"month":"AUG","yearmonth":201908,"mgrname":"Abhijit Roy"},{"year":2019,"rev":1027098,"month":"SEP","yearmonth":201909,"mgrname":"Abhijit Roy"},{"year":2019,"qtr":"Q2 ","rev":116802,"month":"SEP","yearmonth":201909,"mgrname":"Abhijit Roy"},{"year":2019,"rev":1012411,"month":"OCT","yearmonth":201910,"mgrname":"Abhijit Roy"},{"year":2019,"qtr":"Q3 ","rev":734123,"month":"OCT","yearmonth":201910,"mgrname":"Abhijit Roy"},{"year":2019,"rev":976461,"month":"NOV","yearmonth":201911,"mgrname":"Abhijit Roy"},{"year":2019,"qtr":"Q3 ","rev":1015357,"month":"NOV","yearmonth":201911,"mgrname":"Abhijit Roy"},{"year":2019,"rev":854678,"month":"DEC","yearmonth":201912,"mgrname":"Abhijit Roy"},{"year":2019,"qtr":"Q3 ","rev":602213,"month":"DEC","yearmonth":201912,"mgrname":"Abhijit Roy"},{"year":2020,"rev":422858,"month":"JAN","yearmonth":202001,"mgrname":"Abhijit Roy"},{"year":2020,"qtr":"Q4 ","rev":576891,"month":"JAN","yearmonth":202001,"mgrname":"Abhijit Roy"},{"year":2020,"rev":422858,"month":"FEB","yearmonth":202002,"mgrname":"Abhijit Roy"},{"year":2020,"qtr":"Q4 ","rev":567748,"month":"FEB","yearmonth":202002,"mgrname":"Abhijit Roy"},{"year":2020,"rev":222858,"month":"MAR","yearmonth":202003,"mgrname":"Abhijit Roy"},{"year":2020,"qtr":"Q4 ","rev":578903,"month":"MAR","yearmonth":202003,"mgrname":"Abhijit Roy"},{"year":2020,"qtr":"Q1 ","rev":495794,"month":"APR","yearmonth":202004,"mgrname":"Abhijit Roy"},{"year":2020,"qtr":"Q1 ","rev":495795,"month":"MAY","yearmonth":202005,"mgrname":"Abhijit Roy"},{"year":2020,"qtr":"Q1 ","rev":495795,"month":"JUN","yearmonth":202006,"mgrname":"Abhijit Roy"},{"year":2020,"qtr":"Q2 ","rev":495796,"month":"JUL","yearmonth":202007,"mgrname":"Abhijit Roy"},{"year":2020,"qtr":"Q2 ","rev":495796,"month":"AUG","yearmonth":202008,"mgrname":"Abhijit Roy"},{"year":2020,"qtr":"Q2 ","rev":318191,"month":"SEP","yearmonth":202009,"mgrname":"Abhijit Roy"},{"year":2020,"qtr":"Q3 ","rev":318191,"month":"OCT","yearmonth":202010,"mgrname":"Abhijit Roy"},{"year":2020,"qtr":"Q3 ","rev":318191,"month":"NOV","yearmonth":202011,"mgrname":"Abhijit Roy"},{"year":2020,"qtr":"Q3 ","rev":318191,"month":"DEC","yearmonth":202012,"mgrname":"Abhijit Roy"}]},{"mgrname":"Amit Singh","values":[{"year":2018,"rev":185744,"month":"APR","yearmonth":201804,"mgrname":"Amit Singh"},{"year":2018,"rev":810586,"month":"MAY","yearmonth":201805,"mgrname":"Amit Singh"},{"year":2018,"rev":670911,"month":"JUN","yearmonth":201806,"mgrname":"Amit Singh"},{"year":2018,"rev":550133,"month":"JUL","yearmonth":201807,"mgrname":"Amit Singh"},{"year":2018,"rev":615636,"month":"AUG","yearmonth":201808,"mgrname":"Amit Singh"},{"year":2018,"rev":564543,"month":"SEP","yearmonth":201809,"mgrname":"Amit Singh"},{"year":2018,"rev":580527,"month":"OCT","yearmonth":201810,"mgrname":"Amit Singh"},{"year":2018,"rev":831332,"month":"NOV","yearmonth":201811,"mgrname":"Amit Singh"},{"year":2018,"rev":523544,"month":"DEC","yearmonth":201812,"mgrname":"Amit Singh"},{"year":2019,"rev":359949,"month":"JAN","yearmonth":201901,"mgrname":"Amit Singh"},{"year":2019,"rev":1059745,"month":"FEB","yearmonth":201902,"mgrname":"Amit Singh"},{"year":2019,"rev":757023,"month":"MAR","yearmonth":201903,"mgrname":"Amit Singh"},{"year":2019,"rev":689765,"month":"APR","yearmonth":201904,"mgrname":"Amit Singh"},{"year":2019,"rev":692928,"month":"MAY","yearmonth":201905,"mgrname":"Amit Singh"},{"year":2019,"rev":1128678,"month":"JUN","yearmonth":201906,"mgrname":"Amit Singh"},{"year":2019,"rev":732446,"month":"JUL","yearmonth":201907,"mgrname":"Amit Singh"},{"year":2019,"rev":972179,"month":"AUG","yearmonth":201908,"mgrname":"Amit Singh"},{"year":2019,"rev":851241,"month":"SEP","yearmonth":201909,"mgrname":"Amit Singh"},{"year":2019,"rev":1204629,"month":"OCT","yearmonth":201910,"mgrname":"Amit Singh"},{"year":2019,"rev":950522,"month":"NOV","yearmonth":201911,"mgrname":"Amit Singh"},{"year":2019,"rev":879876,"month":"DEC","yearmonth":201912,"mgrname":"Amit Singh"},{"year":2020,"rev":508132,"month":"JAN","yearmonth":202001,"mgrname":"Amit Singh"},{"year":2020,"rev":1242029,"month":"FEB","yearmonth":202002,"mgrname":"Amit Singh"},{"year":2020,"rev":347932,"month":"MAR","yearmonth":202003,"mgrname":"Amit Singh"}]},{"mgrname":"Saravana Kumar","values":[{"year":2018,"rev":198335,"month":"APR","yearmonth":201804,"mgrname":"Saravana Kumar"},{"year":2018,"rev":221010,"month":"MAY","yearmonth":201805,"mgrname":"Saravana Kumar"},{"year":2018,"rev":212073,"month":"JUN","yearmonth":201806,"mgrname":"Saravana Kumar"},{"year":2018,"rev":164501,"month":"JUL","yearmonth":201807,"mgrname":"Saravana Kumar"},{"year":2018,"rev":289693,"month":"AUG","yearmonth":201808,"mgrname":"Saravana Kumar"},{"year":2018,"rev":245761,"month":"SEP","yearmonth":201809,"mgrname":"Saravana Kumar"},{"year":2018,"rev":205865,"month":"OCT","yearmonth":201810,"mgrname":"Saravana Kumar"},{"year":2018,"rev":262167,"month":"NOV","yearmonth":201811,"mgrname":"Saravana Kumar"},{"year":2018,"rev":252572,"month":"DEC","yearmonth":201812,"mgrname":"Saravana Kumar"},{"year":2019,"rev":118334,"month":"JAN","yearmonth":201901,"mgrname":"Saravana Kumar"},{"year":2019,"rev":193334,"month":"FEB","yearmonth":201902,"mgrname":"Saravana Kumar"},{"year":2019,"rev":223334,"month":"MAR","yearmonth":201903,"mgrname":"Saravana Kumar"},{"year":2019,"rev":100000,"month":"MAY","yearmonth":201905,"mgrname":"Saravana Kumar"},{"year":2019,"rev":100000,"month":"JUN","yearmonth":201906,"mgrname":"Saravana Kumar"},{"year":2019,"rev":150000,"month":"JUL","yearmonth":201907,"mgrname":"Saravana Kumar"},{"year":2019,"rev":150000,"month":"AUG","yearmonth":201908,"mgrname":"Saravana Kumar"},{"year":2019,"rev":100000,"month":"SEP","yearmonth":201909,"mgrname":"Saravana Kumar"},{"year":2019,"rev":100000,"month":"OCT","yearmonth":201910,"mgrname":"Saravana Kumar"},{"year":2019,"rev":100000,"month":"NOV","yearmonth":201911,"mgrname":"Saravana Kumar"},{"year":2019,"rev":100000,"month":"DEC","yearmonth":201912,"mgrname":"Saravana Kumar"}]},{"mgrname":"Ranga Kuchlyan","values":[{"year":2018,"rev":184529,"month":"APR","yearmonth":201804,"mgrname":"Ranga Kuchlyan"},{"year":2018,"rev":180252,"month":"MAY","yearmonth":201805,"mgrname":"Ranga Kuchlyan"},{"year":2018,"rev":1807705,"month":"JUN","yearmonth":201806,"mgrname":"Ranga Kuchlyan"},{"year":2018,"rev":594799,"month":"JUL","yearmonth":201807,"mgrname":"Ranga Kuchlyan"},{"year":2018,"rev":951406,"month":"AUG","yearmonth":201808,"mgrname":"Ranga Kuchlyan"},{"year":2018,"rev":1046702,"month":"SEP","yearmonth":201809,"mgrname":"Ranga Kuchlyan"},{"year":2018,"rev":1011291,"month":"OCT","yearmonth":201810,"mgrname":"Ranga Kuchlyan"},{"year":2018,"rev":1057733,"month":"NOV","yearmonth":201811,"mgrname":"Ranga Kuchlyan"},{"year":2018,"rev":1055403,"month":"DEC","yearmonth":201812,"mgrname":"Ranga Kuchlyan"},{"year":2019,"rev":449353,"month":"JAN","yearmonth":201901,"mgrname":"Ranga Kuchlyan"},{"year":2019,"rev":355361,"month":"FEB","yearmonth":201902,"mgrname":"Ranga Kuchlyan"},{"year":2019,"rev":1700899,"month":"MAR","yearmonth":201903,"mgrname":"Ranga Kuchlyan"},{"year":2019,"rev":806268,"month":"APR","yearmonth":201904,"mgrname":"Ranga Kuchlyan"},{"year":2019,"rev":491202,"month":"MAY","yearmonth":201905,"mgrname":"Ranga Kuchlyan"},{"year":2019,"rev":749702,"month":"JUN","yearmonth":201906,"mgrname":"Ranga Kuchlyan"},{"year":2019,"rev":320819,"month":"JUL","yearmonth":201907,"mgrname":"Ranga Kuchlyan"},{"year":2019,"rev":696234,"month":"AUG","yearmonth":201908,"mgrname":"Ranga Kuchlyan"},{"year":2019,"rev":805134,"month":"SEP","yearmonth":201909,"mgrname":"Ranga Kuchlyan"},{"year":2019,"rev":826694,"month":"OCT","yearmonth":201910,"mgrname":"Ranga Kuchlyan"},{"year":2019,"rev":750819,"month":"NOV","yearmonth":201911,"mgrname":"Ranga Kuchlyan"},{"year":2019,"rev":682819,"month":"DEC","yearmonth":201912,"mgrname":"Ranga Kuchlyan"},{"year":2020,"rev":1256341,"month":"JAN","yearmonth":202001,"mgrname":"Ranga Kuchlyan"},{"year":2020,"rev":1256341,"month":"FEB","yearmonth":202002,"mgrname":"Ranga Kuchlyan"},{"year":2020,"rev":789591,"month":"MAR","yearmonth":202003,"mgrname":"Ranga Kuchlyan"}]},{"mgrname":"Sourav Roy","values":[{"year":2018,"rev":71605,"month":"APR","yearmonth":201804,"mgrname":"Sourav Roy"},{"year":2018,"rev":71605,"month":"MAY","yearmonth":201805,"mgrname":"Sourav Roy"},{"year":2018,"rev":690860,"month":"JUN","yearmonth":201806,"mgrname":"Sourav Roy"},{"year":2018,"rev":147000,"month":"JUL","yearmonth":201807,"mgrname":"Sourav Roy"},{"year":2018,"rev":147000,"month":"AUG","yearmonth":201808,"mgrname":"Sourav Roy"},{"year":2018,"rev":147000,"month":"SEP","yearmonth":201809,"mgrname":"Sourav Roy"},{"year":2018,"rev":149541,"month":"OCT","yearmonth":201810,"mgrname":"Sourav Roy"},{"year":2018,"rev":149541,"month":"NOV","yearmonth":201811,"mgrname":"Sourav Roy"},{"year":2018,"rev":149541,"month":"DEC","yearmonth":201812,"mgrname":"Sourav Roy"},{"year":2019,"rev":265595,"month":"JAN","yearmonth":201901,"mgrname":"Sourav Roy"},{"year":2019,"rev":287723,"month":"FEB","yearmonth":201902,"mgrname":"Sourav Roy"},{"year":2019,"rev":228502,"month":"MAR","yearmonth":201903,"mgrname":"Sourav Roy"},{"year":2019,"rev":544249,"month":"APR","yearmonth":201904,"mgrname":"Sourav Roy"},{"year":2019,"rev":557148,"month":"MAY","yearmonth":201905,"mgrname":"Sourav Roy"},{"year":2019,"rev":548059,"month":"JUN","yearmonth":201906,"mgrname":"Sourav Roy"},{"year":2019,"rev":352050,"month":"JUL","yearmonth":201907,"mgrname":"Sourav Roy"},{"year":2019,"rev":509769,"month":"AUG","yearmonth":201908,"mgrname":"Sourav Roy"},{"year":2019,"rev":902678,"month":"SEP","yearmonth":201909,"mgrname":"Sourav Roy"},{"year":2019,"rev":1249745,"month":"OCT","yearmonth":201910,"mgrname":"Sourav Roy"},{"year":2019,"rev":1080995,"month":"NOV","yearmonth":201911,"mgrname":"Sourav Roy"},{"year":2019,"rev":895070,"month":"DEC","yearmonth":201912,"mgrname":"Sourav Roy"},{"year":2020,"rev":821098,"month":"JAN","yearmonth":202001,"mgrname":"Sourav Roy"},{"year":2020,"rev":693616,"month":"FEB","yearmonth":202002,"mgrname":"Sourav Roy"},{"year":2020,"rev":680873,"month":"MAR","yearmonth":202003,"mgrname":"Sourav Roy"}]},{"mgrname":"Preeti Mohapatra","values":[{"year":2018,"rev":5516,"month":"APR","yearmonth":201804,"mgrname":"Preeti Mohapatra"},{"year":2018,"rev":357015,"month":"MAY","yearmonth":201805,"mgrname":"Preeti Mohapatra"},{"year":2018,"rev":745000,"month":"JUN","yearmonth":201806,"mgrname":"Preeti Mohapatra"},{"year":2018,"rev":382485,"month":"JUL","yearmonth":201807,"mgrname":"Preeti Mohapatra"},{"year":2018,"rev":432485,"month":"AUG","yearmonth":201808,"mgrname":"Preeti Mohapatra"},{"year":2018,"rev":419489,"month":"SEP","yearmonth":201809,"mgrname":"Preeti Mohapatra"},{"year":2018,"rev":452291,"month":"OCT","yearmonth":201810,"mgrname":"Preeti Mohapatra"},{"year":2018,"rev":519839,"month":"NOV","yearmonth":201811,"mgrname":"Preeti Mohapatra"},{"year":2018,"rev":442530,"month":"DEC","yearmonth":201812,"mgrname":"Preeti Mohapatra"},{"year":2019,"rev":475435,"month":"JAN","yearmonth":201901,"mgrname":"Preeti Mohapatra"},{"year":2019,"rev":332548,"month":"FEB","yearmonth":201902,"mgrname":"Preeti Mohapatra"},{"year":2019,"rev":417416,"month":"MAR","yearmonth":201903,"mgrname":"Preeti Mohapatra"},{"year":2019,"rev":348602,"month":"APR","yearmonth":201904,"mgrname":"Preeti Mohapatra"},{"year":2019,"rev":389614,"month":"MAY","yearmonth":201905,"mgrname":"Preeti Mohapatra"},{"year":2019,"rev":423733,"month":"JUN","yearmonth":201906,"mgrname":"Preeti Mohapatra"},{"year":2019,"rev":451982,"month":"JUL","yearmonth":201907,"mgrname":"Preeti Mohapatra"},{"year":2019,"rev":426194,"month":"AUG","yearmonth":201908,"mgrname":"Preeti Mohapatra"},{"year":2019,"rev":481047,"month":"SEP","yearmonth":201909,"mgrname":"Preeti Mohapatra"},{"year":2019,"rev":590488,"month":"OCT","yearmonth":201910,"mgrname":"Preeti Mohapatra"},{"year":2019,"rev":551080,"month":"NOV","yearmonth":201911,"mgrname":"Preeti Mohapatra"},{"year":2019,"rev":556080,"month":"DEC","yearmonth":201912,"mgrname":"Preeti Mohapatra"},{"year":2020,"rev":546680,"month":"JAN","yearmonth":202001,"mgrname":"Preeti Mohapatra"},{"year":2020,"rev":566680,"month":"FEB","yearmonth":202002,"mgrname":"Preeti Mohapatra"},{"year":2020,"rev":846680,"month":"MAR","yearmonth":202003,"mgrname":"Preeti Mohapatra"}]}]; 
+
+//var width = 1200;
+var width = window.innerWidth
+//var height = 500;
+var height = window.innerHeight
+var margin = window.innerWidth/6;
+var duration = 250;
+
+var lineOpacity = "0.25";
+var lineOpacityHover = "0.85";
+var otherLinesOpacityHover = "0.1";
+var lineStroke = "1.5px";
+var lineStrokeHover = "2.5px";
+
+var circleOpacity = '0.85';
+var circleOpacityOnLineHover = "0.25"
+var circleRadius = 3;
+var circleRadiusHover = 6;
+
+
+/* Format Data */
+var parseDate = d3.timeParse("%b/%Y");
+
+var mgrnamearray = [];
+var monthyear = [];  /* changed after v1 to adjust scale */
+var revenue = []; /* changed after v1 to adjust scale*/
+var curdate = new Date();
+
+data.forEach(function(d) { 
+  mgrnamearray.push(d.mgrname)
+  d.values.forEach(function(d) {
+    d.qtr = d.month.trim();
+    d.year = parseDate(d.month + "/" + d.year);
+    d.rev = +d.rev;    
+    monthyear.push(d.year); /* changed after v1 */
+    revenue.push(d.rev);	/* changed after v1 */
+  });
+});
+
+mgrnamearray=d3.set(mgrnamearray).values();
+//monthyear=d3.set(monthyear).values();
+//revenue=d3.set(revenue).values();
+//alert(monthyear);	
+//alert(mgrnamearray);
+/*var yearqtr = [];
+yearqtr = data.map(function(d)
+           {return d.values.qtr + "/" + d.values.year;});*/
+
+
+
+/* Scale */
+/*var xScale = d3.scaleOrdinal()
+  .domain(yearqtr)
+  .range([0, width-margin]);*/
+ // alert(d3.max(monthyear));  
+  
+var xScale = d3.scaleTime()
+ //.domain(d3.extent(data[0].values, d => d.year))
+  .domain([d3.min(monthyear),d3.max(monthyear)]) /* changed after v1 to adjust scale */
+  .range([0, width]);  
+
+  
+var yScale = d3.scaleLinear()
+//  .domain([0, d3.max(data[0].values, d => d.rev)])
+  .domain([0,d3.max(revenue)]) /* changed after v1 to adjust scale */
+  .range([height-margin, 0]);
+
+var color = d3.scaleOrdinal(d3.schemeCategory10);
+
+/* Add SVG */
+var svg = d3.select("#chart").append("svg")
+  .attr("width", (width+margin)+"px")
+  .attr("height", (height+margin)+"px")
+  .append('g')
+ // .attr("transform", `translate(${margin}, ${margin})`);
+  .attr("transform", `translate(100,100)`);
+
+/* Add line into SVG */
+var line = d3.line()
+   .curve(d3.curveCatmullRom)
+    .x(d => xScale(d.year))
+  .y(d => yScale(d.rev));
+
+let lines = svg.append('g')
+  .attr('class', 'lines');
+
+lines.selectAll('.line-group')
+  .data(data).enter()
+  .append('g')
+  .attr('class', 'line-group')  
+  .on("mouseover", function(d, i) {
+      svg.append("text")
+        .attr("class", "title-text")
+        .style("fill", color(d.mgrname))        
+        .text(d.mgrname)
+        .attr("text-anchor", "middle")
+        .attr("x", (width-margin)/2)
+        .attr("y", 5);
+    })
+  .on("mouseout", function(d) {
+      svg.select(".title-text").remove();
+    })
+  .append('path')
+  .attr('class', 'line')  
+  .attr('d', d => line(d.values))
+  .style('stroke', (d, i) => color(d.mgrname))
+  .style('opacity', lineOpacity)
+  .on("mouseover", function(d) {
+      d3.selectAll('.line')
+					.style('opacity', otherLinesOpacityHover);
+      d3.selectAll('.circle')
+					.style('opacity', circleOpacityOnLineHover);
+      d3.select(this)
+        .style('opacity', lineOpacityHover)
+        .style("stroke-width", lineStrokeHover)
+        .style("cursor", "pointer");
+    })
+  .on("mouseout", function(d) {
+      d3.selectAll(".line")
+					.style('opacity', lineOpacity);
+      d3.selectAll('.circle')
+					.style('opacity', circleOpacity);
+      d3.select(this)
+        .style("stroke-width", lineStroke)
+        .style("cursor", "none");
+    });
+
+	var formatTime = d3.timeFormat("%b-%Y")
+
+/* Add circles in the line */
+lines.selectAll("circle-group")
+  .data(data).enter()
+  .append("g")
+  .style("fill", (d, i) => color(d.mgrname))
+  .selectAll("circle")
+  .data(d => d.values).enter()
+  //.data(data).enter()
+  .append("g")
+  .attr("class", "circle")  
+  .on("mouseover", function(d,i) {
+      d3.select(this)     
+        .style("cursor", "pointer")
+        .append("text")
+        .attr("class", "text")
+        .text(`${d.mgrname} - $${d.rev}` + " (" + formatTime(d.year)+ ")")
+        .attr("x", d => xScale(d.year) + 5)
+        .attr("y", d => yScale(d.rev) - 10);
+    })
+  .on("mouseout", function(d) {
+      d3.select(this)
+        .style("cursor", "none")  
+        .transition()
+        .duration(duration)
+        .selectAll(".text").remove();
+    })
+  .append("circle")
+  .attr("cx", d => xScale(d.year))
+  .attr("cy", d => yScale(d.rev))
+  .attr("r", circleRadius)
+  .style('opacity', circleOpacity)
+  .on("mouseover", function(d) {
+        d3.select(this)
+          .transition()
+          .duration(duration)
+          .attr("r", circleRadiusHover);
+      })
+    .on("mouseout", function(d) {
+        d3.select(this) 
+          .transition()
+          .duration(duration)
+          .attr("r", circleRadius);  
+      });
+
+
+/* Add Axis into SVG */
+var xAxis = d3.axisBottom(xScale).ticks(20).tickFormat(formatTime);
+var yAxis = d3.axisLeft(yScale).ticks(10);
+
+svg.append("g")
+  .attr("class", "x axis")
+  .attr("transform", `translate(0, ${height-margin})`)
+  .call(xAxis)
+  /* added after v1 */
+  .selectAll("text")
+  .attr("dx", ".35em")
+  .attr("dy", "-.35em")
+  .attr("transform", "rotate(90)")
+  .style("text-anchor", "start");
+  /*.........................................*/
+
+ 
+svg.append("g")
+  .attr("class", "y axis")
+  .call(yAxis)
+  .append('text')
+  .attr("y", -60)
+  .attr("transform", "rotate(-90)")
+  .attr("fill", "#000")
+  .text("Total Revenue");
+  
+// alert(curdate);
+//var formatcurdate=formatTime(curdate);
+svg.append("line")
+   .style("stroke", "black")  // colour the line
+    .attr("x1", xScale(curdate))     // x position of the first end of the line
+    .attr("y1", 0)      // y position of the first end of the line
+    .attr("x2", xScale(curdate))     // x position of the second end of the line
+    .attr("y2", (height-margin))
+   .attr("class", "ref-line")
+   .style("stroke-dasharray", ("3, 3"));
+
+  
+ var size = 10
+ var clicked = true
+svg.selectAll("mydots")
+  .data(mgrnamearray)
+  .enter()
+  .append("rect")
+    .attr("x", width-200)
+    .attr("y", function(d,i){ return -40 + i*(size+5)}) // 100 is where the first dot appears. 25 is the distance between dots
+    .attr("width", size)
+    .attr("height", size)
+    .style("fill", function(d){ return color(d)})
+	
+
+// Add one dot in the legend for each name.
+svg.selectAll("mylabels")
+  .data(mgrnamearray)
+  .enter()
+  .append("text")
+    .attr("x", width-200 + size*1.2)
+    .attr("y", function(d,i){ return -40 + i*(size+5) + (size/2)}) // 100 is where the first dot appears. 25 is the distance between dots
+    .style("fill", function(d){ return color(d)})
+    .text(function(d){ return d})
+    .attr("text-anchor", "left")
+    .style("alignment-baseline", "middle")
+</script>	
+
+	
+
+		
+

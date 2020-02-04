@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+
+    <title>Tree Example</title>
+
+    <style>
+	
+	.node {
+		cursor: pointer;
+	}
+
+	.node circle {
+	  fill: #fff;
+	  stroke: steelblue;
+	  stroke-width: 3px;
+	}
+
+	.node text {
+	  font: 10px sans-serif;
+	  color :"white";
+	}
+
+	.link {
+	  fill: none;
+	  stroke: #ccc;
+	  stroke-width: 2px;
+	}
+	
+	div.tooltip {	
+    position: absolute;			
+    text-align: center;			
+    width: 60px;					
+    height: 28px;					
+    padding: 2px;				
+    font: 12px sans-serif;		
+    background: lightsteelblue;	
+    border: 0px;		
+    border-radius: 8px;			
+    pointer-events: none;			
+}	
+	
+    </style>
+
+  </head>
+
+  <body>
+
+<!-- load the d3.js library -->	
+
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script>
+
+var treeData = 
+  {
+    "batch_no": "1077940",
+	"stage": "FDP",
+    "parent": "null",
+    "children": [
+      {
+        "batch_no": "1076180",
+		"stage": "LDP",
+        "parent": "1077940",
+        "children": [
+          {
+            "batch_no": "10303972",
+			"stage": "IDP",
+            "parent": "1076180",
+			"children": [
+				  {
+					"batch_no": "10303329",
+					"stage": "DP",
+					"parent": "10303972"
+				  }
+				  ]
+          },
+          {
+            "batch_no": "10313752",
+			"stage": "IDP",
+            "parent": "1076180"
+          },
+		  {
+            "batch_no": "10306380",
+			"stage": "IDP",
+            "parent": "1076180"
+          },
+		  {
+            "batch_no": "10265238",
+			"stage": "IDP",
+            "parent": "1076180"
+          },
+		  {
+            "batch_no": "10285492",
+			"stage": "IDP",
+            "parent": "1076180"
+          },
+		  {
+            "batch_no": "10285499",
+			"stage": "DP",
+            "parent": "1076180"
+          }
+        ]
+      },
+	  {"batch_no": "10317378",
+		"stage": "LDP",
+        "parent": "1077940"
+	  },
+	  {"batch_no": "1074761",
+		"stage": "LDP",
+        "parent": "1077940"
+	  },
+	  {"batch_no": "10328369",
+		"stage": "LDP",
+        "parent": "1077940"
+	  }
+    ]
+  }
+;
+
+
+
+
+// Set the dimensions and margins of the diagram
+var margin = {top: 20, right: 90, bottom: 30, left: 90},
+    width = 1000 - margin.left - margin.right,
+    height = 900 - margin.top - margin.bottom;
+	
+var stages = ["FDP", "LDP", "IDP", "DP"]	
+
+var colorScale = d3.scaleOrdinal()
+                   .domain(stages)
+                  .range(["red", "orange", "green", "blue"]);
+
+
+// append the svg object to the body of the page
+// appends a 'group' element to 'svg'
+// moves the 'group' element to the top left margin
+
+var div = d3.select("body").append("div")	
+    .attr("class", "tooltip")				
+    .style("opacity", 0);
+	
+	
+var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.right + margin.left)
+    .attr("height", height + margin.top + margin.bottom)	
+	.attr("viewBox", "0 "+(-1*(height-margin.top-margin.bottom)/3)+" "+width+" "+height)
+	.call(d3.zoom().on("zoom", function () {
+    svg.attr("transform", d3.event.transform)
+ }))
+  .append("g")
+    .attr("transform", "translate("
+          + margin.left + "," + margin.top + ")");
+
+var i = 0,
+    duration = 750,
+    root;
+
+var nodeWidth = 60;
+var nodeHeight = 15;
+var horizontalSeparationBetweenNodes = 16;
+var verticalSeparationBetweenNodes = 30;
+	
+// declares a tree layout and assigns the size
+var treemap = d3.tree()
+                .nodeSize([nodeWidth + horizontalSeparationBetweenNodes, nodeHeight + verticalSeparationBetweenNodes])
+                .separation(function separation(a, b) { return (a.parent == b.parent ? 1 : 10)/a.depth; });
+
+// Assigns parent, children, height, depth
+root = d3.hierarchy(treeData, function(d) { return d.children; });
+//root = treeData[0];
+root.x0 = height;
+root.y0 = 0;
+
+// Collapse the node and all it's children
+function collapse(d) {
+  if(d.children) {
+    d._children = d.children
+    d._children.forEach(collapse)
+    d.children = null
+  }
+}
+
+// Collapse after the second level
+//root.children.forEach(collapse);
+//root.children.forEach(collapse);
+update(root);
+
+
+
+function update(source) {
+
+  // Assigns the x and y position for the nodes
+  var treeData = treemap(root);
+
+  // Compute the new tree layout.
+  var nodes = treeData.descendants(),
+      links = treeData.descendants().slice(1);
+
+  // Normalize for fixed-depth.
+  nodes.forEach(function(d){ d.y = d.depth * 180});
+
+  // ****************** Nodes section ***************************
+
+  // Update the nodes...
+  var node = svg.selectAll('g.node')
+      .data(nodes, function(d) {return d.id || (d.id = ++i); });
+	  
+	  
+
+  // Enter any new modes at the parent's previous position.
+  var nodeEnter = node.enter().append('g')
+      .attr('class', 'node')
+      .attr("transform", function(d) {
+        return "translate(" + (source.y0) + "," + (source.x0) + ")";
+    })
+    .on('click', click);
+	
+
+  // Add Circle for the nodes
+  nodeEnter.append('circle')
+      .attr('class', 'node')
+      .attr('r', 1e-6)
+	  //.attr('r', 25)
+      .style("fill", function(d,i) {
+          return d._children ? "#ecf2f8" : "#FFFFFF";
+       })
+  //		.style("stroke", function(d){return colorScale(colorScale)});
+
+  // Add labels for the nodes
+  nodeEnter.append('text')
+      .attr("dy", ".35em")
+      .attr("x", function(d) {
+          return d.children || d._children ? -16 : 16;
+      })
+      .attr("text-anchor", function(d) {
+          return d.children || d._children ? "end" : "start";
+      })
+      .text(function(d) 
+	     { return d.data.batch_no; })
+
+
+   nodeEnter.append('text')
+      .attr("dy", "1.35em")
+      .attr("x", function(d) {
+          return d.children || d._children ? -19 : 19;
+      })
+      .attr("text-anchor", function(d) {
+          return d.children || d._children ? "end" : "start";
+      })
+      .text(function(d) 
+	     { return d.data.stage; })
+ 
+  // UPDATE
+  var nodeUpdate = nodeEnter.merge(node);
+
+  // Transition to the proper position for the node
+  nodeUpdate.transition()
+    .duration(duration)
+    .attr("transform", function(d) { 
+        return "translate(" + d.y + "," + d.x + ")";
+     });
+
+  // Update the node attributes and style
+  nodeUpdate.select('circle.node')
+    .attr('r', 15)
+    .style("fill", function(d) {
+        return d._children ? "#ecf2f8" : "#FFFFFF";
+    })
+.on("mouseover", function(d) {		
+            div.transition()		
+                .duration(200)		
+                .style("opacity", .9);		
+            div	.html(d.data.batch_no + "<br/>"  + d.data.stage)	
+                .style("left", d3.select('circle.node').attr("cx") + "px")     
+                .style("top", d3.select('circle.node').attr("cy") + "px");
+		 //       .style("left", (d3.event.pageX) + "em")		
+           //     .style("top", (d3.event.pageY - 28) + "em")
+            })					
+        .on("mouseout", function(d) {		
+            div.transition()		
+                .duration(500)		
+                .style("opacity", 0)
+				//.style("left", (window.pageXOffset + matrix.e + 15) + "px")
+                //.style("top", (window.pageYOffset + matrix.f - 30) + "px");	
+        })
+		.attr('cursor', 'pointer');
+
+	
+  nodeUpdate.append("text")
+        .attr("dx", function(d){return -10})
+		.attr("dy", function(d){return 4})
+        .text(function(d){return d.data.stage});
+
+		
+  // Remove any exiting nodes
+  var nodeExit = node.exit().transition()
+      .duration(duration)
+      .attr("transform", function(d) {
+          return "translate(" + source.y + "," + source.x + ")";
+      })
+      .remove();
+
+  // On exit reduce the node circles size to 0
+  nodeExit.select('circle')
+    .attr('r', 1e-6)
+    .style("fill", function(d) {
+        return d._children ? "#ecf2f8" : "#FFFFFF";
+    })
+  // On exit reduce the opacity of text labels
+  nodeExit.select('text')
+    .style('fill-opacity', 1e-6);
+
+  // ****************** links section ***************************
+
+  // Update the links...
+  var link = svg.selectAll('path.link')
+      .data(links, function(d) { return d.id; })
+  		.style('stroke-width', function(d){
+        return 1.5
+      });
+
+  // Enter any new links at the parent's previous position.
+  var linkEnter = link.enter().insert('path', "g")
+      .attr("class", "link")
+      .attr('d', function(d){
+        var o = {x: source.x0, y: source.y0}
+        return diagonal(o, o)
+      })
+  		.style('stroke-width', function(d){
+        return 1.5
+      });
+
+  // UPDATE
+  var linkUpdate = linkEnter.merge(link);
+
+  // Transition back to the parent element position
+  linkUpdate.transition()
+      .duration(duration)
+      .attr('d', function(d){ return diagonal(d, d.parent) });
+
+  // Remove any exiting links
+  var linkExit = link.exit().transition()
+      .duration(duration)
+      .attr('d', function(d) {
+        var o = {x: source.x, y: source.y}
+        return diagonal(o, o)
+      })
+  		.style('stroke-width', function(d){
+        return 1.5
+      })
+      .remove();
+
+  // Store the old positions for transition.
+  nodes.forEach(function(d){
+    d.x0 = d.x;
+    d.y0 = d.y;
+  });
+  
+
+  
+// Add one dot in the legend for each batch_no.
+/*var size = 20
+svg.selectAll("mydots")
+  .data(stages)
+  .enter()
+  .append("rect")
+    .attr("x", function(d,i){ return  i*(size+45)})
+    .attr("y", height-30) // 100 is where the first dot appears. 25 is the distance between dots
+    .attr("width", size)
+    .attr("height", size)
+    .style("fill", function(d){ return colorScale(d)})
+
+// Add one dot in the legend for each batch_no.
+svg.selectAll("mylabels")
+  .data(stages)
+  .enter()
+  .append("text")
+    .attr("x", function(d,i){ return i*(size+45) + (25)})
+    .attr("y", height-15) // 100 is where the first dot appears. 25 is the distance between dots
+    .style("fill", function(d){ return colorScale(d)})
+    .text(function(d){ return d})
+    .attr("text-anchor", "left")
+    .style("alignment-baseline", "middle")
+	*/
+
+	
+  // Creates a curved (diagonal) path from parent to the child nodes
+  function diagonal(s, d) {
+
+    path = `M ${s.y} ${s.x}
+            C ${(s.y + d.y) / 2} ${s.x},
+              ${(s.y + d.y) / 2} ${d.x},
+              ${d.y} ${d.x}`
+
+    return path
+  }
+
+  // Toggle children on click.
+  function click(d) {
+    if (d.children) {
+        d._children = d.children;
+        d.children = null;
+      } else {
+        d.children = d._children;
+        d._children = null;
+      }
+    update(d);
+  }
+}
+</script>
+</body>
+
+</html>

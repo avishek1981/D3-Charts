@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<!-- Load d3.js -->
+<script src="https://d3js.org/d3.v4.js"></script>
+
+<!-- Create a div where the graph will take place -->
+<div id="my_dataviz" style="display:inline-block"></div>
+<div class = "barplotres" style="display:inline-block"> </div>
+
+<script>
+
+// set the dimensions and margins of the graph
+var margin = {top: 10, right: 30, bottom: 50, left: 100},
+    width = 460 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+	
+var t = d3.transition().duration(200);	
+
+// append the svg object to the body of the page
+var svg = d3.select("#my_dataviz")
+  .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform",
+          "translate(" + margin.left + "," + margin.top + ")");
+
+var active_link = "0";
+		  
+// Parse the Data
+var data = [
+  {
+    "label": "United States",
+    "values": [{
+	"count" : 12394,
+	"period": 'Jan-20',
+	"label": "United States"
+  },
+  {"count" : 500,
+	"period": 'Feb-20',
+	"label": "United States"
+  },
+  {"count" : 500,
+	"period": 'Mar-20',
+	"label": "United States"
+  }]
+  },
+  {
+    "label": "Russia",
+    "values": [{"count" : 6148,
+	"period": 'Jan-20',
+	"label": "Russia"
+  },
+  {"count" : 61,
+	"period": 'Feb-20',
+	"label": "Russia"
+  },
+  {"count" : 16243,
+	"period": 'Mar-20',
+	"label": "Russia"
+  }]
+  }
+];
+//adding total to json and subsequently to chart
+/*var totalres = d3.nest()
+		                 //.key()
+						 .rollup(function(v){return d3.sum(v,function(d){return d.values.count;});})
+						 .entries(data);						 		
+						 
+var totalstring = ',{"label" : "Total","value" : "'	+ 	totalres +'"}]';
+		
+var datastring = JSON.stringify(data)
+		
+var data = JSON.parse(datastring.replace(']',totalstring));
+
+// sort data
+data.sort(function(b, a) {
+  return a.value - b.value;
+});
+*/
+monthyear =  [];
+countvalues = []
+
+data.forEach(function(d) { 
+  d.values.forEach(function(d) {
+    d.count = +d.count;    
+    monthyear.push(d.period); /* create an array for all months */
+	countvalues.push(+d.count);
+  });
+});
+
+monthyear=d3.set(monthyear).values();
+countvalues=d3.set(countvalues).values();
+countvalues=countvalues.map(Number);
+countvalues.sort(d3.ascending);
+
+// Add X axis
+var x = d3.scaleBand()
+          .domain(monthyear)
+          .rangeRound([0, width])
+          .padding(1);
+		  
+var xradius = d3.scaleBand()
+          .domain(countvalues)
+          .rangeRound([12, 30])	;	  
+  
+var colorscale = d3.scaleLinear()
+            .range(['#83c883','#ffff3b','#ff4f4f'])
+           // .domain([0, d3.max(data.values, function (d) {
+           //     return d.count;
+           // })])
+		    .domain([d3.min(countvalues),d3.max(countvalues)]);
+  
+var dxscale = d3.scaleOrdinal()
+            .range(["-13","-11","-8","-5","-2"])
+            .domain([5,4,3,2,1]);	
+  
+svg.append("g")
+  .attr("transform", "translate(0," + height + ")")
+  .call(d3.axisBottom(x))
+  .selectAll("text")
+    .attr("transform", "translate(-10,0)rotate(-45)")
+    .style("text-anchor", "end");
+
+// Y axis
+var y = d3.scaleBand()
+  .range([ 0, height ])
+  .domain(data.map(function(d) { return d.label; }))
+  .padding(1);
+  
+  
+svg.append("g")
+  .call(d3.axisLeft(y))
+
+// Lines
+svg.selectAll(".myhline")
+  .data(data)
+  .enter()
+  .append("line")
+  .attr("class","myhline")
+    //.attr("x1", function(d) { return x(d.value); })
+	.attr("x1", function(d) { return width; })
+    .attr("x2", x(0))
+    .attr("y1", function(d) { return y(d.label); })
+    .attr("y2", function(d) { return y(d.label); })
+    .attr("stroke", "grey")
+	.style("stroke-dasharray", ("3,3"))
+	.style("stroke-width", 2)
+	
+svg.selectAll(".myvline")
+  .data(data)
+  .enter()
+  .append('g')
+  .selectAll("lines")
+  .data(d => d.values).enter()
+  .append("line")
+  .attr("class","myvline")
+    //.attr("x1", function(d) { return x(d.value); })
+	.attr("x1", function(d) { return x(d.period); })
+    .attr("x2", function(d) { return x(d.period); })
+    .attr("y1", height)
+    .attr("y2", y("0"))
+    .attr("stroke", "grey")
+	.style("stroke-dasharray", ("3,3"))
+	.style("stroke-width", 2)
+
+
+// Circles
+svg.selectAll("mycircle")
+  .data(data)
+  .enter()
+  .append("g")
+  .selectAll("circle")
+  .data(d => d.values).enter()
+  .append("circle")
+  .attr("class","circle")
+  .attr("id",function(d) { return d.period+d.label.replace(/\s/g, "");})
+    .attr("cx", function(d) { return x(d.period); })
+    .attr("cy", function(d) { return y(d.label); })
+    .attr("r", function (d) {
+                        return d.count == 0 ? "0" : 
+						xradius(d.count);
+                    })
+    .style("fill", function(d) { return colorscale(d.count); })
+    .attr("stroke", "black")
+	.on('click', function(d){ currentopacity = d3.selectAll(".circle:not(#" + d.period+d.label.replace(/\s/g, "")+ ")").style("opacity")
+                              d3.selectAll(".circle:not(#" +  d.period+d.label.replace(/\s/g, "")+ ")").transition().style("opacity", 0.5) 
+							  //d3.selectAll(".circle:not(#" +  d.period+d.label.replace(/\s/g, "")+ ")").transition().style("opacity", 0.2)
+							  d3.selectAll("#" +  d.period+d.label.replace(/\s/g, "")).transition().style("opacity", 1)
+			                  //d3.selectAll(".circles").transition(t).style("opacity", 1); 
+							  //d3.select(".circles").transition(t).style("opacity", 0.5);
+	                          drawverticalbarchart(d.label,d.period);})
+	.on("mouseover", function() {
+                              if (active_link === "0") d3.select(this).style("cursor", "pointer");
+									else {
+									if (active_link.split("class").pop() === this.id.split("id").pop()) {
+									d3.select(this).style("cursor", "pointer");
+									} else d3.select(this).style("cursor", "auto");
+									}
+									}) 
+	
+	
+	//text labels
+svg.selectAll("#textlabels")
+   .data(data)
+   .enter()
+   .append("g")
+   .selectAll("#textlabels")
+   .data(d => d.values).enter()
+   .append("text")
+   .attr("class","textlabels")
+   .attr("x",function(d) { return x(d.period); })
+   .attr("y",function(d) { return y	(d.label); })
+   .attr("dx",function(d) { return dxscale(d.count.toString().length); })
+   .attr("dy","3")
+   .text(function(d) { return d.count == 0 ? '' : 
+						d.count; })
+   .style("font-size",11)	
+   .style("font-weight","bold")
+   .style("fill","black")
+   .on('click', function(d){  currentopacity = d3.selectAll(".circle:not(#" + d.period+d.label.replace(/\s/g, "")+ ")").style("opacity")
+                              d3.selectAll(".circle:not(#" +  d.period+d.label.replace(/\s/g, "")+ ")").transition().style("opacity", 0.4) 
+							  //d3.selectAll(".circle:not(#" +  d.period+d.label.replace(/\s/g, "")+ ")").transition().style("opacity", 0.2)
+							  d3.selectAll("#" +  d.period+d.label.replace(/\s/g, "")).transition().style("opacity", 1)
+			                  //d3.selectAll(".circles").transition(t).style("opacity", 1); 
+							  //d3.select(".circles").transition(t).style("opacity", 0.5);
+	                          drawverticalbarchart(d.label,d.period);})
+	.on("mouseover", function() {
+                              if (active_link === "0") d3.select(this).style("cursor", "pointer");
+									else {
+									if (active_link.split("class").pop() === this.id.split("id").pop()) {
+									d3.select(this).style("cursor", "pointer");
+									} else d3.select(this).style("cursor", "auto");
+									}
+									}) 
+							  	
+  
+
+
+function drawverticalbarchart(label,period){
+
+
+
+var data = [{"label":"Data Engineer","count":"15"},{"label":"Visual Engineer","count":"5"},{"label":"Scrum Master","count" : "2"},{"label" : "Delivery Lead" ,count:"10"}];
+
+d3.selectAll(".vbarpltloc").remove();
+
+var margin = {top: 10, right: 20, bottom: 50, left: 40},
+    width = 300 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+
+// set the ranges
+var x = d3.scaleBand()
+          .range([0, width])
+          .padding(0.1);
+var y = d3.scaleLinear()
+          .range([height, 0]);
+		  
+var colorscale = d3.scaleLinear()
+            .range(['#FA8072','#DC143C'])
+            .domain([0, d3.max(data, function (d) {
+                return d.count;
+            })]);
+
+// append the svg object to the body of the page
+// append a 'group' element to 'svg'
+// moves the 'group' element to the top left margin
+var svg = d3.select(".barplotres").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+	.attr("class","vbarpltloc")
+	//.attr("height", height )
+  .append("g")
+    .attr("transform", 
+          "translate(" + margin.left + "," + margin.top + ")");
+
+  // format the data
+  data.forEach(function(d) {
+    d.count = +d.count;
+  });
+
+  // Scale the range of the data in the domains
+  x.domain(data.map(function(d) { return d.label ; }));
+  y.domain([0, d3.max(data, function(d) { return d.count; })]);
+  
+  var t = d3.transition().duration(200);
+  
+  // append the rectangles for the bar chart
+  svg.selectAll(".bar")
+      .data(data)
+    .enter().append("rect")
+      .attr("class", "bar")
+      .attr("x", function(d) { return x(d.label); })
+      .attr("width", x.bandwidth())
+      .attr("y", function(d) { return y(d.count); })
+      .attr("height", function(d) { return height - y(d.count); })
+	  .style("fill", function(d) { return colorscale(d.count);})
+	  .on('click',function(d){ currentopacity = d3.select(this).style('opacity'); 
+			                         d3.selectAll('.bar').transition(t).style("opacity", 1); 
+									 d3.select(this).transition(t).style("opacity", 0.5);
+									 selected_id = d.label; 
+									 //selected_type = d.type;
+									 //console.log(selected_type);
+									 //drawasterplotmanager(data,selected_id,selected_type);
+									 //drawasterplotlocation(selected_id,selected_type);
+									 });
+									 
+  // add the x Axis
+  svg.append("g")
+      .attr("transform", "translate(0," + (height) + ")")
+      .call(d3.axisBottom(x))
+	  .selectAll("text")
+  .attr("dx", ".35em")
+  .attr("dy", "-.105em")
+  .attr("transform", "rotate(-45)")
+  .style("text-anchor", "end");
+  //.style("text-decoration", "white");
+
+  // add the y Axis
+  svg.append("g")
+      .call(d3.axisLeft(y))
+	  ;
+
+          //add a value label to the top of each bar
+        svg.selectAll(".text")  		
+	  .data(data)
+	  .enter()
+	  .append("text")
+            .attr("class", "label")
+            //y position of the label is halfway down the bar
+            .attr("x", function (d) {
+                return x(d.label) + x.bandwidth() / 2 -4;
+            })
+            //x position is 3 pixels to the right of the bar
+            .attr("y", function (d) {
+                return y(d.count) ;
+            })
+            .text(function (d) {
+                return d.count;
+            })
+			.style("font-size",10);
+
+}
+
+
+</script>

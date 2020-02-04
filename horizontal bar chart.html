@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset='utf-8' />
+    <title>Simple Bar chart</title>
+    <script src="https://d3js.org/d3.v4.min.js" charset="utf-8"></script>
+    <style>
+        body {
+            font-family: "Arial", sans-serif;
+        }
+        
+        .bar {
+            fill: #5f89ad;
+        }
+        
+        .axis {
+            font-size: 13px;
+        }
+        
+        .axis path,
+        .axis line {
+            fill: none;
+            display: none;
+        }
+        
+        .label {
+            font-size: 13px;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <div id="graphic"></div>
+
+    <script>
+        var data = [{
+                "name": "Data Engineer",
+				"type":"Offshore",
+				"probability":"Confirmed",
+                "value": 20
+        },
+            {
+                "name": "Visualisation Engineer",
+				"type":"Offshore",
+				"probability":"Confirmed",
+                "value": 12
+        },
+            {
+                "name": "Scrum Master",
+				"type":"Offshore",
+				"probability":"Confirmed",
+                "value": 19
+        },
+            {
+                "name": "Project Manager",
+				"type":"Offshore",
+				"probability":"Confirmed",
+                "value": 0
+        },
+            {
+                "name": "PMO",
+				"type":"Offshore",
+				"probability":"Confirmed",
+                "value": 16
+        },
+            {
+                "name": "Mulesoft Developer",
+				"type":"Offshore",
+				"probability":"Confirmed",
+                "value": 26
+        },
+            {
+                "name": "Filler",
+				"type":"Offshore",
+				"probability":"Confirmed",
+                "value": 13
+        },
+		{
+                "name": "Data Engineer",
+				"type":"Onshore",
+				"probability":"Confirmed",
+                "value": 2
+        },
+            {
+                "name": "Visualisation Engineer",
+				"type":"Onshore",
+				"probability":"Confirmed",
+                "value": 1
+        },
+            {
+                "name": "Scrum Master",
+				"type":"Onshore",
+				"probability":"Confirmed",
+                "value": 24
+        },
+            {
+                "name": "Project Manager",
+				"type":"Onshore",
+				"probability":"Confirmed",
+                "value": 1
+        },
+            {
+                "name": "PMO",
+				"type":"Onshore",
+				"probability":"Confirmed",
+                "value": 0
+        },
+            {
+                "name": "Mulesoft Developer",
+				"type":"Onshore",
+				"probability":"Confirmed",
+                "value": 5
+        },
+            {
+                "name": "Filler",
+				"type":"Onshore",
+				"probability":"Confirmed",
+                "value": 13
+        }];
+
+        //sort bars based on value
+       // data = data.sort(function (a, b) {
+       //     return d3.ascending(a.value, b.value);
+       // })
+		
+		 // format the data
+    data.forEach(function(d) {
+           d.value =  d.type == "Onshore" ? +d.value*-1 : +d.value;
+  });
+
+        //set up svg using margin conventions - we'll need plenty of room on the left for labels
+        var margin = {
+            top: 15,
+            right: 25,
+            bottom: 15,
+            left: 25
+        };
+
+        var width = 400 - margin.left - margin.right,
+            height = 300 - margin.top - margin.bottom;
+
+        var svg = d3.select("#graphic").append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", "translate(" + (margin.left) + "," + margin.top + ")");
+
+        var x = d3.scaleLinear()
+           //.range([(width/2-80)-150, (width/2-80)+150])
+		    .range([0,(width/2)-60])
+            .domain([0, d3.max(data, function (d) {
+                return Math.abs(d.value);
+            })]);
+
+
+		  /* .domain([d3.min(data, function (d) {
+                return d.value;
+            }), d3.max(data, function (d) {
+                return d.value;
+            })]);*/
+			
+        /*var colorscale = d3.scaleLinear()
+            .range(['#CCCCFF','#002366'])
+            .domain([d3.min(data, function (d) {
+                return d.value;
+            }), d3.max(data, function (d) {
+                return d.value;
+            })]);*/
+			
+			var colorscale = d3.scaleOrdinal()
+			.range(['#d55c5c','#a6f1a6'])
+            .domain(["Offshore","Onshore"]);
+
+        var y = d3.scaleBand()
+            .rangeRound([height, 0])
+			.padding(0.1)
+            .domain(data.map(function (d) {
+                return d.name;
+            }));
+
+        //make y axis to show bar names
+        var yAxis = d3.axisLeft(y)
+            .scale(y)
+            //no tick marks
+            .tickSize(0);
+           
+
+        var gy = svg.append("g")
+            .attr("class", "y axis")
+			.attr("transform", "translate(" + (width/2) + "," + (margin.top-15) + ")")
+			.style("text-anchor", "middle")
+			.style("text-align","middle")
+			.style("font-size",10)
+            .call(yAxis)
+			
+		 /*make x axis visible
+        var xAxis = d3.axisBottom(x)
+            .scale(x)
+            //no tick marks
+            .tickSize(10);
+           
+
+        var gx = svg.append("g")
+            .attr("class", "x axis")
+			//.attr("transform", "translate(" + width/2 + "," + margin.top + ")")
+            .call(xAxis)*/
+
+
+        var bars = svg.selectAll(".bar")
+            .data(data)
+            .enter()
+            .append("g")
+        
+		var t = d3.transition().duration(200);
+        //append rects
+        bars.append("rect")
+            .attr("class", "bar")
+            .attr("y", function (d) {
+                return y(d.name);
+            })
+            .attr("height", y.bandwidth())
+            .attr("x", function (d) {
+                //return  d.value > 0 ? (width/2+50) : (x(d.value)-100);
+				return  d.value > 0 ? (width/2+60) : (width/2-(x(-1*d.value)+60));
+            })
+            .attr("width", function (d) {
+			    //console.log(width/2);
+				//console.log(d.value, x(d.value));
+                //return  d.value > 0 ? x(d.value)- 50 : ((width/2-50)-x(d.value)  );
+				return  d.value > 0 ? x(d.value) : (x(-1*d.value)  );
+            })
+			.style('fill',function(d){return colorscale(d.type);})
+			.on('click',function(d){ currentopacity = d3.select(this).style('opacity'); 
+			                         //console.log(d.value);
+			                         d3.selectAll('rect').transition(t).style("fill",function(d){return colorscale(d.type);}); 
+			                         d3.selectAll('rect').transition(t).style("opacity", 1); 
+									 d3.select(this).transition(t).style("fill","orange");
+									 d3.select(this).transition(t).style("opacity", 0.5);
+									 selected_id = d.name; 
+									 tabulate(data, ["name", "value"],selected_id);});
+
+        //add a value label to the right of each bar
+        bars.append("text")
+            .attr("class", "label")
+            //y position of the label is halfway down the bar
+            .attr("y", function (d) {
+                return y(d.name) + y.bandwidth() / 2 + 4;
+            })
+            //x position is 3 pixels to the right of the bar
+            .attr("x", function (d) {
+			    if (d.value > 0) {return (width/2+60) + x(d.value) + 3}
+				else if (d.value < 0) {return ((width/2-(x(-1*d.value)+60)-15 ))}
+				else if (d.value = 0) {return null};
+				
+                //return d.value > 0 ? x(d.value) + 53 : (x(d.value) -120 );
+            })
+            .text(function (d) {
+                if (d.value > 0) {return d.value}
+				else if (d.value < 0) {return -1*d.value}
+				else if (d.value = 0) {return null};
+            })
+			.style("font-size",10);
+			
+function tabulate(data,columns,id) {
+
+    d3.selectAll("table").remove();
+    var data = data.filter(function(d){return d.name ===id});
+    var table = d3.select("body").append("table")
+            .attr("style", "margin-left: 200px")
+            .style("border-collapse", "collapse")// <= Add this line in
+            .style("border", "2px black solid"), // <= Add this line in
+        thead = table.append("thead"),
+        tbody = table.append("tbody");
+
+    // append the header row
+    thead.append("tr")
+        .selectAll("th")
+        .data(columns)
+        .enter()
+        .append("th")
+            .text(function(column) { return column; });
+
+    // create a row for each object in the data
+    var rows = tbody.selectAll("tr")
+        .data(data)
+        .enter()
+        .append("tr");
+
+    // create a cell in each row for each column
+    var cells = rows.selectAll("td")
+        .data(function(row) {
+            return columns.map(function(column) {
+                return {column: column, value: row[column]};
+            });
+        })
+        .enter()
+        .append("td")
+        .attr("style", "font-family: Courier") // sets the font style
+            .html(function(d) { return d.value; });
+    
+    return table;
+}			
+        
+    </script>
+
+</body>
+
+</html>

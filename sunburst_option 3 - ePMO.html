@@ -1,0 +1,558 @@
+
+<head>
+    <style>
+        body {
+            font-family: Sans-serif;
+            font-size: 11px;
+        }
+
+        .slice {
+            cursor: pointer;
+        }
+
+        .slice .main-arc {
+            stroke: #fff;
+            stroke-width: 1px;
+        }
+
+        .slice .hidden-arc {
+            fill: none;
+        }
+
+        .slice text {
+            pointer-events: none;
+            dominant-baseline: middle;
+            text-anchor: middle;
+        }
+		.d3-tip {
+  line-height: 1;
+  font-weight: bold;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  border-radius: 2px;
+}
+
+/* Creates a small triangle extender for the tooltip */
+.d3-tip:after {
+  box-sizing: border-box;
+  display: inline;
+  font-size: 10px;
+  width: 100%;
+  line-height: 1;
+  color: rgba(0, 0, 0, 0.8);
+  content: "\25BC";
+  position: absolute;
+  text-align: center;
+}
+
+/* Style northward tooltips differently */
+.d3-tip.n:after {
+  margin: -1px 0 0 0;
+  top: 100%;
+  left: 0;
+}
+    </style>
+
+    <script src='https://d3js.org/d3.v4.min.js'></script>
+</head>
+<body>
+<script>
+d3.functor = function functor(v) {
+  return typeof v === "function" ? v : function() {
+    return v;
+  };
+};
+
+d3.tip = function() {
+
+  var direction = d3_tip_direction,
+      offset    = d3_tip_offset,
+      html      = d3_tip_html,
+      node      = initNode(),
+      svg       = null,
+      point     = null,
+      target    = null
+
+  function tip(vis) {
+    svg = getSVGNode(vis)
+    point = svg.createSVGPoint()
+    document.body.appendChild(node)
+  }
+
+  // Public - show the tooltip on the screen
+  //
+  // Returns a tip
+  tip.show = function() {
+    var args = Array.prototype.slice.call(arguments)
+    if(args[args.length - 1] instanceof SVGElement) target = args.pop()
+
+    var content = html.apply(this, args),
+        poffset = offset.apply(this, args),
+        dir     = direction.apply(this, args),
+        nodel   = getNodeEl(),
+        i       = directions.length,
+        coords,
+        scrollTop  = document.documentElement.scrollTop || document.body.scrollTop,
+		//scrollTop  = document.documentElement.scrollBottom || document.body.scrollBottom,
+        scrollLeft = document.documentElement.scrollLeft || document.body.scrollLeft
+
+    nodel.html(content)
+      .style('position', 'absolute')
+      .style('opacity', 1)
+      .style('pointer-events', 'all')
+
+    while(i--) nodel.classed(directions[i], false)
+    coords = direction_callbacks[dir].apply(this)
+    nodel.classed(dir, true)
+      .style('top', (coords.top +  poffset[0]) + scrollTop + 'px')
+	  //.style('bottom', (coords.Bottom +  poffset[0]) + scrollTop + 'px')
+      .style('left', (coords.left + poffset[1]) + scrollLeft + 'px')
+
+    return tip
+  }
+
+  // Public - hide the tooltip
+  //
+  // Returns a tip
+  tip.hide = function() {
+    var nodel = getNodeEl()
+    nodel
+      .style('opacity', 0)
+      .style('pointer-events', 'none')
+    return tip
+  }
+
+  // Public: Proxy attr calls to the d3 tip container.  Sets or gets attribute value.
+  //
+  // n - name of the attribute
+  // v - value of the attribute
+  //
+  // Returns tip or attribute value
+  tip.attr = function(n, v) {
+    if (arguments.length < 2 && typeof n === 'string') {
+      return getNodeEl().attr(n)
+    } else {
+      var args =  Array.prototype.slice.call(arguments)
+      d3.selection.prototype.attr.apply(getNodeEl(), args)
+    }
+
+    return tip
+  }
+
+  // Public: Proxy style calls to the d3 tip container.  Sets or gets a style value.
+  //
+  // n - name of the property
+  // v - value of the property
+  //
+  // Returns tip or style property value
+  tip.style = function(n, v) {
+    // debugger;
+    if (arguments.length < 2 && typeof n === 'string') {
+      return getNodeEl().style(n)
+    } else {
+      var args = Array.prototype.slice.call(arguments);
+      if (args.length === 1) {
+        var styles = args[0];
+        Object.keys(styles).forEach(function(key) {
+          return d3.selection.prototype.style.apply(getNodeEl(), [key, styles[key]]);
+        });
+      }
+    }
+
+    return tip
+  }
+
+  // Public: Set or get the direction of the tooltip
+  //
+  // v - One of n(north), s(south), e(east), or w(west), nw(northwest),
+  //     sw(southwest), ne(northeast) or se(southeast)
+  //
+  // Returns tip or direction
+  tip.direction = function(v) {
+    if (!arguments.length) return direction
+    direction = v == null ? v : d3.functor(v)
+
+    return tip
+  }
+
+  // Public: Sets or gets the offset of the tip
+  //
+  // v - Array of [x, y] offset
+  //
+  // Returns offset or
+  tip.offset = function(v) {
+    if (!arguments.length) return offset
+    offset = v == null ? v : d3.functor(v)
+
+    return tip
+  }
+
+  // Public: sets or gets the html value of the tooltip
+  //
+  // v - String value of the tip
+  //
+  // Returns html value or tip
+  tip.html = function(v) {
+    if (!arguments.length) return html
+    html = v == null ? v : d3.functor(v)
+
+    return tip
+  }
+
+  // Public: destroys the tooltip and removes it from the DOM
+  //
+  // Returns a tip
+  tip.destroy = function() {
+    if(node) {
+      getNodeEl().remove();
+      node = null;
+    }
+    return tip;
+  }
+
+  function d3_tip_direction() { return 'n' }
+  function d3_tip_offset() { return [0, 0] }
+  function d3_tip_html() { return ' ' }
+
+  var direction_callbacks = {
+    n:  direction_n,
+    s:  direction_s,
+    e:  direction_e,
+    w:  direction_w,
+    nw: direction_nw,
+    ne: direction_ne,
+    sw: direction_sw,
+    se: direction_se
+  };
+
+  var directions = Object.keys(direction_callbacks);
+
+  function direction_n() {
+    var bbox = getScreenBBox()
+    return {
+      top:  bbox.n.y - node.offsetHeight,
+      left: bbox.n.x - node.offsetWidth / 2
+    }
+  }
+
+  function direction_s() {
+    var bbox = getScreenBBox()
+    return {
+      top:  bbox.s.y,
+      left: bbox.s.x - node.offsetWidth / 2
+    }
+  }
+
+  function direction_e() {
+    var bbox = getScreenBBox()
+    return {
+      top:  bbox.e.y - node.offsetHeight / 2,
+      left: bbox.e.x
+    }
+  }
+
+  function direction_w() {
+    var bbox = getScreenBBox()
+    return {
+      top:  bbox.w.y - node.offsetHeight / 2,
+      left: bbox.w.x - node.offsetWidth
+    }
+  }
+
+  function direction_nw() {
+    var bbox = getScreenBBox()
+    return {
+      top:  bbox.nw.y - node.offsetHeight,
+      left: bbox.nw.x - node.offsetWidth
+    }
+  }
+
+  function direction_ne() {
+    var bbox = getScreenBBox()
+    return {
+      top:  bbox.ne.y - node.offsetHeight,
+      left: bbox.ne.x
+    }
+  }
+
+  function direction_sw() {
+    var bbox = getScreenBBox()
+    return {
+      top:  bbox.sw.y,
+      left: bbox.sw.x - node.offsetWidth
+    }
+  }
+
+  function direction_se() {
+    var bbox = getScreenBBox()
+    return {
+      top:  bbox.se.y,
+      left: bbox.e.x
+    }
+  }
+
+  function initNode() {
+    var node = d3.select(document.createElement('div'))
+    node
+      .style('position', 'absolute')
+      .style('top', '0')
+      .style('opacity', '0')
+      .style('pointer-events', 'none')
+      .style('box-sizing', 'border-box')
+
+    return node.node()
+  }
+
+  function getSVGNode(el) {
+    el = el.node()
+    if(el.tagName.toLowerCase() === 'svg')
+      return el
+
+    return el.ownerSVGElement
+  }
+
+  function getNodeEl() {
+    if(node === null) {
+      node = initNode();
+      // re-add node to DOM
+      document.body.appendChild(node);
+    };
+    return d3.select(node);
+  }
+
+  // Private - gets the screen coordinates of a shape
+  //
+  // Given a shape on the screen, will return an SVGPoint for the directions
+  // n(north), s(south), e(east), w(west), ne(northeast), se(southeast), nw(northwest),
+  // sw(southwest).
+  //
+  //    +-+-+
+  //    |   |
+  //    +   +
+  //    |   |
+  //    +-+-+
+  //
+  // Returns an Object {n, s, e, w, nw, sw, ne, se}
+  function getScreenBBox() {
+    var targetel   = target || d3.event.target;
+
+    while ('undefined' === typeof targetel.getScreenCTM && 'undefined' === targetel.parentNode) {
+        targetel = targetel.parentNode;
+    }
+
+    var bbox       = {},
+        matrix     = targetel.getScreenCTM(),
+        tbbox      = targetel.getBBox(),
+        width      = tbbox.width,
+        height     = tbbox.height,
+        x          = tbbox.x,
+        y          = tbbox.y
+
+    point.x = x
+    point.y = y
+    bbox.nw = point.matrixTransform(matrix)
+    point.x += width
+    bbox.ne = point.matrixTransform(matrix)
+    point.y += height
+    bbox.se = point.matrixTransform(matrix)
+    point.x -= width
+    bbox.sw = point.matrixTransform(matrix)
+    point.y -= height / 2
+    bbox.w  = point.matrixTransform(matrix)
+    point.x += width
+    bbox.e = point.matrixTransform(matrix)
+    point.x -= width / 2
+    point.y -= height / 2
+    bbox.n = point.matrixTransform(matrix)
+    point.y += height
+    bbox.s = point.matrixTransform(matrix)
+
+    return bbox
+  }
+
+  return tip
+};
+</script>
+
+
+
+<script>
+
+				
+		var root = {"name":"OVERALL","status":"OVERALL","children":[{"name":"RED","status":"RED","type":"status","children":[{"name":"Amgen-R\u0026DIS","status":"RED","type":"tower","children":[{"name":"ssadhu@tcs.com","status":"RED","type":"manager","tower":"Amgen-R\u0026DIS","children":[{"name":"PVRDM - PSL","size":"1","children":[]}]}]},{"name":"Amgen-RESIS","status":"RED","type":"tower","children":[{"name":"ssadhu@tcs.com","status":"RED","type":"manager","tower":"Amgen-RESIS","children":[{"name":"jhfjhf","size":"1","children":[]}]}]}]},{"name":"EMBER","status":"EMBER","type":"status","children":[{"name":"Amgen-R\u0026DIS","status":"EMBER","type":"tower","children":[{"name":"ssadhu@tcs.com","status":"EMBER","type":"manager","tower":"Amgen-R\u0026DIS","children":[{"name":"Validation of LIMS upgrade","size":"1","children":[]}]}]}]},{"name":"GREEN","status":"GREEN","type":"status","children":[{"name":"Amgen-R\u0026DIS","status":"GREEN","type":"tower","children":[{"name":"abhijit1","status":"GREEN","type":"manager","tower":"Amgen-R\u0026DIS","children":[{"name":"KEG - Dec Release update","size":"1","children":[]}]},{"name":"inder.mahto@tcs.com","status":"GREEN","type":"manager","tower":"Amgen-R\u0026DIS","children":[{"name":"Bioconnect Portal hypercare extension","size":"1","children":[]}]},{"name":"UNKNOWN","status":"GREEN","type":"manager","tower":"Amgen-R\u0026DIS","children":[{"name":"CTMS EDL Ingestion","size":"1","children":[]},{"name":"Publication Content Delivery Portal","size":"1","children":[]},{"name":"eTMF EDL Enh","size":"1","children":[]},{"name":"R Validation","size":"1","children":[]},{"name":"DataVision Enh-2","size":"1","children":[]},{"name":"PVRDM SPOS","size":"1","children":[]},{"name":"GRAAS Smart Template IPIM Enhancement","size":"1","children":[]},{"name":"GRAAS Multiple enhancement","size":"1","children":[]},{"name":"GRAAS_Enhancements_Data_Patch_PMSR","size":"1","children":[]},{"name":"ISD: CDMS2SAS Enhancements Release2","size":"1","children":[]},{"name":"ISD: CSM changes","size":"1","children":[]},{"name":"LIMS ISD Release 2","size":"1","children":[]},{"name":"GRAIL Lifecycle upgrade - ","size":"1","children":[]},{"name":"New User utility Replatform","size":"1","children":[]},{"name":"RUN-Global Medical Publications Analytics(Data Vision)","size":"1","children":[]},{"name":"Run - Medical Affairs Data Vision support","size":"1","children":[]},{"name":"RUN-ERG","size":"1","children":[]},{"name":"RUN-HTB EDL","size":"1","children":[]},{"name":"RUN-CMD","size":"1","children":[]},{"name":"RUN-eTMF","size":"1","children":[]},{"name":"KEG Analytics support","size":"1","children":[]},{"name":"SNGS 2019","size":"1","children":[]},{"name":"PVRDM changes in Appian Applications","size":"1","children":[]},{"name":"MS Dynamics support","size":"1","children":[]},{"name":"GDnA DEvOps RFP","size":"1","children":[]},{"name":"Support for eTMF EDL and MuleSoft","size":"1","children":[]},{"name":"Managed Service TS Support (Reddy)","size":"1","children":[]},{"name":"GSP Run Support applications","size":"1","children":[]},{"name":"TMP license","size":"1","children":[]},{"name":"GRAAS Run","size":"1","children":[]},{"name":"RUN - CMD EDL - Phase 2","size":"1","children":[]},{"name":"CTMS EDL - CO","size":"1","children":[]},{"name":"Testing","size":"1","children":[]}]},{"name":"ssadhu@tcs.com","status":"GREEN","type":"manager","tower":"Amgen-R\u0026DIS","children":[{"name":"SAFEDX Phase 2","size":"1","children":[]},{"name":"PADER PSUR","size":"1","children":[]}]},{"name":"prabir.sarkar1@tcs.com","status":"GREEN","type":"manager","tower":"Amgen-R\u0026DIS","children":[{"name":"Isela - CTL and Var Form SharePoint enhancement","size":"1","children":[]}]},{"name":"Ashish","status":"GREEN","type":"manager","tower":"Amgen-R\u0026DIS","children":[{"name":"KEG Run Support","size":"1","children":[]}]}]},{"name":"Amgen-OIS","status":"GREEN","type":"tower","children":[{"name":"UNKNOWN","status":"GREEN","type":"manager","tower":"Amgen-OIS","children":[{"name":"ASL Maximo Reporting","size":"1","children":[]},{"name":"E2ESCV - Backlog SOW","size":"1","children":[]},{"name":"PCMT EDL 2.0","size":"1","children":[]},{"name":"Tableau T\u0026amp;M EEA","size":"1","children":[]},{"name":"OIS Transformation Roadmap initiative","size":"1","children":[]},{"name":"OCR Program Manager ATO","size":"1","children":[]},{"name":"QC Labs Technical Lead","size":"1","children":[]},{"name":"RUN-QMR Metrics - Tableau Report","size":"1","children":[]},{"name":"RUN-Global Medical Affair","size":"1","children":[]},{"name":"ELAB Site addition","size":"1","children":[]},{"name":"Supplier Quality Mgmt","size":"1","children":[]},{"name":"HL Site Localization AML - Jaime","size":"1","children":[]},{"name":"ARM 29 apps Excluding EDL Analytics","size":"1","children":[]},{"name":"ARM 4 apps (LOTEC, ERG, Squid, HTB EDL)","size":"1","children":[]},{"name":"Build Project Work Order - Holistic Lab Program - Testing - 02-Jan-2019 to 31-Oct-2019","size":"1","children":[]},{"name":"OCR - SPM","size":"1","children":[]},{"name":"Global Medical Affair Analytics - Phase 2 ALIGN \u0026 KEG","size":"1","children":[]},{"name":"RUN - E2ESCV Phase 2- Commercial","size":"1","children":[]},{"name":"Staff Org- Scrum Master","size":"1","children":[]},{"name":"Staff Org- Salesforce Developer","size":"1","children":[]},{"name":"IBP Dashboard Enhancement","size":"1","children":[]},{"name":"Scorecard CDIF EDL 2.0 - Enh - Change Order","size":"1","children":[]},{"name":"IBP EDL Data Load - Oct -Dec Q4","size":"1","children":[]},{"name":"RUN - E2ESCV Clinical","size":"1","children":[]},{"name":"EDL 1.0 to EDL 2.0 - CDIF, Scorecard, OEE, Romania","size":"1","children":[]},{"name":"RUN - INCA/GETS EDL","size":"1","children":[]},{"name":"RUN-MAXIMO EDL","size":"1","children":[]},{"name":"RUN-CRIS Report","size":"1","children":[]},{"name":"RUN-E2ESCV","size":"1","children":[]},{"name":"RUN-ARRS","size":"1","children":[]},{"name":"RUN-Romania EDL MOH","size":"1","children":[]},{"name":"RUN-EDL Scorecard Phase 2","size":"1","children":[]},{"name":"RUN-EDL Scorecard Phase 1 and CDIF","size":"1","children":[]},{"name":"RUN-OMD","size":"1","children":[]},{"name":"RUN-DPC","size":"1","children":[]},{"name":"TCP Web UI SOW - ODS T\u0026M","size":"1","children":[]},{"name":"Anaplan-ETL Refactoring","size":"1","children":[]},{"name":"ODS Core Technical Team SOW till 2020","size":"1","children":[]},{"name":"sample","size":"1","children":[]},{"name":"sal","size":"1","children":[]},{"name":"Testing create reloading","size":"1","children":[]}]},{"name":"Ashish","status":"GREEN","type":"manager","tower":"Amgen-OIS","children":[{"name":"QA Lead Position - T\u0026amp;amp;M","size":"1","children":[]}]},{"name":"ssadhu@tcs.com","status":"GREEN","type":"manager","tower":"Amgen-OIS","children":[{"name":"Planishware EDL Ingestion","size":"1","children":[]}]},{"name":"inder.mahto@tcs.com","status":"GREEN","type":"manager","tower":"Amgen-OIS","children":[{"name":"ODS Validation Services","size":"1","children":[]}]}]},{"name":"Amgen-BPS","status":"GREEN","type":"tower","children":[{"name":"UNKNOWN","status":"GREEN","type":"manager","tower":"Amgen-BPS","children":[{"name":"Products Complaint Management","size":"1","children":[]},{"name":"Medical Coding","size":"1","children":[]},{"name":"Literature Review","size":"1","children":[]},{"name":"Quality Engineering","size":"1","children":[]},{"name":"DMS Operations","size":"1","children":[]},{"name":"PASR - Periodic Aggregate Safety Reporting ","size":"1","children":[]},{"name":"eCTD - Regulatory Operations","size":"1","children":[]},{"name":"Regulatory Operations","size":"1","children":[]},{"name":"Safety PVG","size":"1","children":[]},{"name":"eTMF","size":"1","children":[]},{"name":"IRPC - Non Phone Intake","size":"1","children":[]},{"name":"Quality Monitoring","size":"1","children":[]},{"name":"Pharmacovigilance","size":"1","children":[]},{"name":"Case Management Follow \u0026amp;amp;amp;ndash; up cases","size":"1","children":[]},{"name":"Medical Coding Additional FTE (3 FTEs)","size":"1","children":[]},{"name":"Amgen Biosimilar Safety Assessment (Safety Survillance)","size":"1","children":[]}]}]},{"name":"Amgen-GCOIS","status":"GREEN","type":"tower","children":[{"name":"UNKNOWN","status":"GREEN","type":"manager","tower":"Amgen-GCOIS","children":[{"name":"GDnA Operations Pricing RPA SOW - Q2,3,4 2019 v0.1","size":"1","children":[]}]}]},{"name":"Amgen-CCC","status":"GREEN","type":"tower","children":[{"name":"UNKNOWN","status":"GREEN","type":"manager","tower":"Amgen-CCC","children":[{"name":"Tidal run","size":"1","children":[]},{"name":"O365 base","size":"1","children":[]}]}]},{"name":"Amgen-EEA","status":"GREEN","type":"tower","children":[{"name":"UNKNOWN","status":"GREEN","type":"manager","tower":"Amgen-EEA","children":[{"name":"Tableau T\u0026M SOW","size":"1","children":[]},{"name":"EEA Durable Capability - Core SOW","size":"1","children":[]}]}]}]}]};
+		
+		const width = window.innerWidth,
+            height = window.innerHeight,
+            maxRadius = (Math.min(width, height) / 2) - 5;
+
+        const formatNumber = d3.format(',d');
+
+        const x = d3.scaleLinear()
+            .range([0, 2 * Math.PI])
+            .clamp(true);
+
+        const y = d3.scaleSqrt()
+            .range([maxRadius*.1, maxRadius]);
+
+        //const color = d3.scaleOrdinal(d3.schemeCategory20);
+		const color = d3.scaleOrdinal()
+		                .range(['red','orange','#0dd06f','white']) //#0dd06f,#1ff189
+						.domain(['RED','EMBER','GREEN','OVERALL']);
+
+        const partition = d3.partition();
+
+        const arc = d3.arc()
+            .startAngle(d => x(d.x0))
+            .endAngle(d => x(d.x1))
+            .innerRadius(d => Math.max(0, y(d.y0)))
+            .outerRadius(d => Math.max(0, y(d.y1)));
+
+        const middleArcLine = d => {
+            const halfPi = Math.PI/2;
+            const angles = [x(d.x0) - halfPi, x(d.x1) - halfPi];
+            const r = Math.max(0, (y(d.y0) + y(d.y1)) / 2);
+
+            const middleAngle = (angles[1] + angles[0]) / 2;
+            const invertDirection = middleAngle > 0 && middleAngle < Math.PI; // On lower quadrants write text ccw
+            if (invertDirection) { angles.reverse(); }
+
+            const path = d3.path();
+            path.arc(0, 0, r, angles[0], angles[1], invertDirection);
+            return path.toString();
+        };
+
+        const textFits = d => {
+            const CHAR_SPACE = 6;
+
+            const deltaAngle = x(d.x1) - x(d.x0);
+            const r = Math.max(0, (y(d.y0) + y(d.y1)) / 2);
+            const perimeter = r * deltaAngle;
+            return 6 * CHAR_SPACE < perimeter;
+            //return d.data.name.length * CHAR_SPACE < perimeter;
+        };
+		
+		function nvl(value1,value2) 
+               {
+                if (value1 == null)
+					return value2;
+					return value1;
+                };
+
+        const svg = d3.select('body').append('svg')
+            .style('width', '100vw')
+            .style('height', '100vh')
+            .attr('viewBox', `${-width / 2} ${-height / 2} ${width} ${height}`)
+            .on('click', () => focusOn())
+			; // Reset zoom on canvas click
+
+  //      d3.json('https://gist.githubusercontent.com/mbostock/4348373/raw/85f18ac90409caa5529b32156aa6e71cf985263f/flare.json', (error, root) => {
+  //          if (error) throw error;
+
+            root = d3.hierarchy(root);
+            root.sum(d => d.size);
+
+            const slice = svg.selectAll('g.slice')
+                .data(partition(root).descendants());
+
+            slice.exit().remove();	
+			
+            const newSlice = slice.enter()
+                .append('g').attr('class', 'slice')
+                .on('click', d => {
+                    d3.event.stopPropagation();
+                    focusOn(d);
+					console.log(d);
+                });
+
+			var tip = d3.tip()
+  .attr('class', 'd3-tip')
+  .offset([-10, -10])
+  .html(function(d) {
+    return d.data.name + '\n' + formatNumber(d.value) ;
+  });
+
+          
+				/*newSlice.append('title')
+                .text(d => d.data.name + '\n' + formatNumber(d.value));*/
+
+            newSlice.append('path')
+                .attr('class', 'main-arc')
+                .style('fill', d => color((d.children ? d : d.parent).data.status))
+                .attr('d', arc);
+
+            newSlice.append('path')
+                .attr('class', 'hidden-arc')
+                .attr('id', (_, i) => `hiddenArc${i}`)
+                .attr('d', middleArcLine);
+
+            const text = newSlice.append('text')
+                .attr('display', d => textFits(d) ? null : 'none');
+				
+			newSlice.call(tip);
+			newSlice.on("mouseover",tip.show)
+                                     .on("mouseout",tip.hide);
+			//newSlice.call(tip);
+           //newSlice.on("mouseover",tip.show)
+           //        .on("mouseout",tip.hide);
+
+            // Add white contour
+            text.append('textPath')
+                .attr('startOffset','50%')
+                .attr('xlink:href', (_, i) => `#hiddenArc${i}` )
+                .text(d => d.data.name + '-'+ d.value)
+                .style('fill', 'none')
+                .style('stroke', '#fff')
+                .style('stroke-width', 0)
+                .style('stroke-linejoin', 'round');
+
+            text.append('textPath')
+                .attr('startOffset','50%')
+                .attr('xlink:href', (_, i) => `#hiddenArc${i}` )
+                .text(d => d.data.name + '-'+ d.value )
+				//.style('fill','#fff')
+				.style('stroke-weight','bold')
+				.style('font-size',10);
+//        });
+
+        function focusOn(d = { x0: 0, x1: 1, y0: 0, y1: 1 }) {
+            // Reset to top-level if no data point specified
+
+            const transition = svg.transition()
+                .duration(750)
+                .tween('scale', () => {
+                    const xd = d3.interpolate(x.domain(), [d.x0, d.x1]),
+                        yd = d3.interpolate(y.domain(), [d.y0, 1]);
+                    return t => { x.domain(xd(t)); y.domain(yd(t)); };
+                });
+
+            transition.selectAll('path.main-arc')
+                .attrTween('d', d => () => arc(d));
+
+            transition.selectAll('path.hidden-arc')
+                .attrTween('d', d => () => middleArcLine(d));
+
+            transition.selectAll('text')
+                .attrTween('display', d => () => textFits(d) ? null : 'none');
+
+            moveStackToFront(d);
+
+            //
+
+            function moveStackToFront(elD) {
+                svg.selectAll('.slice').filter(d => d === elD)
+                    .each(function(d) {
+                        this.parentNode.appendChild(this);
+                        if (d.parent) { moveStackToFront(d.parent); }
+                    })
+            }
+			
+			function nvl(value1,value2) 
+               {
+                if (value1 == null)
+					return value2;
+					return value1;
+                }
+        }
+    </script>
+</body>

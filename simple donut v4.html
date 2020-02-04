@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+.arc text {
+  font: 10px sans-serif;
+  text-anchor: middle;
+}
+
+.arc path {
+  stroke: #fff;
+}
+
+</style>
+<svg width="160"></svg>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script>
+
+var width = 200;
+var height=200;
+var data = [{"label":"Billable","count":"40"},{"label":"Non-Billable","count":"1"}];
+var totalvalue = []
+data.forEach(function(d) { 
+
+    d.count = +d.count;    
+    totalvalue.push(d.count);
+});
+
+var svg = d3.select("svg"),
+    //width = +svg.attr("width"),
+	width=width,
+	height=height,
+    //height = +svg.attr("height"),
+    radius = (Math.min(width, height) / 2) - 20,
+    g = svg.append("g").attr("transform", "translate(" + (width-20) / 2 + "," + (height-40) / 2 + ")");
+
+var color = d3.scaleOrdinal(["#0000b3", "#d3d3d3"]);
+//var radius = (Math.min(width, height) / 2) - 20
+
+var pie = d3.pie()
+    .sort(null)
+    .value(function(d) { return d.count; });
+
+var path = d3.arc()
+    .outerRadius(radius - 10)
+    .innerRadius(radius - 30);
+
+var label = d3.arc()
+    .outerRadius(radius - 20)
+    .innerRadius(radius - 20);
+
+
+  var arc = g.selectAll(".arc")
+    .data(pie(data))
+    .enter().append("g")
+      .attr("class", "arc");
+
+  arc.append("path")
+      .attr("d", path)
+      .attr("fill", function(d) { return color(d.data.label); })
+	  .on("mouseover", function(d){
+
+          //var xPos = d3.event.pageX;
+          //var yPos = d3.event.pageY;
+          //var height = parseFloat(d3.select(this).attr("height"))
+
+          d3.select(this).attr("stroke","blue").attr("stroke-width",0.8);
+
+          svg.append("text")
+          //.attr("x",xPos)
+          //.attr("y",yPos-10 )
+		  .attr("x",(width-80)/2)
+	      .attr("y",(height-40)/2)
+		  .attr("dy","1em")
+          .attr("class","tooltip")
+          .text(d.data.label + " : " + d.value)
+		  .style("opacity",1)
+		  .style("fill","orange")
+		  .style("font-size",11); 
+          
+       })
+       .on("mouseout",function(){
+          svg.select(".tooltip").remove();
+          d3.select(this).attr("stroke","pink").attr("stroke-width",0.2);
+                                
+        });
+
+  /*	arc.append("text")
+      .attr("transform", function(d) { return "translate(" + label.centroid(d) + ")"; })
+      .attr("dy", "-0.25em")
+	  .style("fill","white")
+      .text(function(d) { return d.data.label + "-" + d.data.count ; });
+	  
+  arc.append("text")
+     .attr("dx","-1.5em")
+     .text("Total - " + d3.sum(totalvalue))*/
+	 
+  svg.append("text")
+     .attr("x",(width-70)/2)
+	 .attr("y",(height-40)/2)
+	 .text("Total - "+ d3.sum(totalvalue))
+	 .style("font-size",12)	
+     //.text(function(d) { return d.data.label + "-" + d.data.count ; })
+
+
+</script>

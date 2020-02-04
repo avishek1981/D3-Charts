@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style> 
+
+</style>
+<body>
+<script src="https://d3js.org/d3.v4.min.js" ></script>
+
+<script>
+var data = [
+     {"project" : "ABC",
+	  "project_tower" : "R&D",
+	  "status_id" : "1",
+	  "status" : "red"
+	  },
+	  {"project" : "XYZ",
+	   "project_tower" : "OIS",
+	    "status_id" : "1",
+	   "status" : "red"
+	  },
+	  {"project" : "DEF",
+	   "project_tower" : "OIS",
+	    "status_id" : "2",
+	   "status" : "amber"
+	  },
+	  {"project" : "GHI",
+	   "project_tower" : "OIS",
+	    "status_id" : "3",
+	   "status" : "green"
+	  }
+ ];
+ 
+var nested_data = d3.nest()
+.key(function(d) { return [d.status,d.status_id]; })
+//.key(function(d) { return d.status_id; })
+.rollup(function(leaves) { return leaves.length; })
+.entries(data);
+/*.map(function(d){ 
+  var ob = {};  
+  ob.Key = d.key;
+  ob.value = d.values.length; 
+  return ob; 
+});*/
+
+console.log(nested_data);
+
+Object.size = function(obj) {
+    var size = 0, key;
+    for (key in obj) {
+        if (obj.hasOwnProperty(key)) size++;
+    }
+    return size;
+};
+
+// Get the size of an object
+var size = Object.size(data);
+
+nested_data.forEach(function(d) { 
+  d.key = d.key;
+  d.value = +((d.value/size)*100);
+  });
+  
+function percentage_value(d) {
+    selected_id = d;
+    nested_data_filtered = nested_data.filter(function(d) { return d.key === selected_id;});
+	console.log(nested_data_filtered);
+	return nested_data_filtered[0].value;
+}  
+  
+ 
+</script>

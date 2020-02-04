@@ -1,0 +1,89 @@
+<!DOCtype html>
+<meta charset="utf-8">
+<style> 
+
+</style>
+<body>
+<script src="https://d3js.org/d3.v4.min.js" ></script>
+  <table  border = 1>
+    <tr>
+	  <td> Sales Manager
+	  </td>
+	  <td> Total Resources
+	  </td>
+	  <td> # of Non-Billable Resources
+	  </td>
+	  <td>  % of Non-Billable Resources
+	  </td>
+	  <td>  Senior vs Junior
+	  </td>
+	  <td>  Last Quarter Revenue
+	  </td>
+	  <td>  Current Quarter Revenue
+	  </td>
+	  <td>  Next Quarter Revenue
+	  </td>
+	</tr>
+	<tr>
+	  <td  id="mgrname"> 
+	  </td>
+	  <td id="ttlrsrc"> 
+	  </td>
+	  <td id="nobillrsrc"> 
+	  </td>
+	  <td id="percbillrsrc">  
+	  </td>
+	  <td id="snrjnr">  
+	  </td>
+	  <td id="prevqtrrev">  
+	  </td>
+	  <td id="curqtrrev">  
+	  </td>
+	  <td id="nxtqtrrev">  
+	  </td>
+	</tr>
+  </table>
+<script>  
+
+  var data = [{
+	"name": "Arnab Bhattacharyya",
+	"resource": [{"label":"Billable","count":"49"},{"label":"Non-Billable","count":"10"},
+	"snrjnrratio": "0.2",
+	"prevqtrrev": "10000",
+	"curqtrrev": [{
+		"label" : "confirmed",
+		"revenue": "5000"},
+		{ "label" : "highchance",
+		  "revenue": "4000"
+	}],
+	"nxtqtrrev": [{
+		"label" : "confirmed",
+		"revenue": "3000"},
+		{ "type" : "highchance",
+		  "revenue": "2000"
+	}]
+},
+{
+	"name": "Sujata Tayade",
+	"resource": [{"label":"Billable","count":"40"},{"label":"Non-Billable","count":"1"}],
+	"snrjnrratio": "0.9",
+	"prevqtrrev": "10000",
+	"curqtrrev": [{
+		"label" : "confirmed",
+		"revenue": "5000"},
+		{ "label" : "highchance",
+		  "revenue": "4000"
+	}],
+	"nxtqtrrev": [{
+		"label" : "confirmed",
+		"revenue": "3000"},
+		{ "type" : "highchance",
+		  "revenue": "2000"
+	}]
+}];
+  document.getElementById("mgrname").value = data[0].name;
+  
+</script>
+
+	
+</body>
